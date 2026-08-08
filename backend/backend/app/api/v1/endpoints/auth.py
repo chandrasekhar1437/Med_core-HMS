@@ -47,7 +47,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
     return user
 
 
-# 1. REGISTER (Supports both /register and /register/ to avoid 404s)
+# 1. REGISTER (Accepts both 'name' and 'full_name' flexibly)
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 @router.post("/register/", status_code=status.HTTP_201_CREATED)
 async def register(payload: UserRegister):
@@ -60,11 +60,13 @@ async def register(payload: UserRegister):
             detail="User with this email already exists",
         )
 
+    # Handle both full_name and name
+    user_name = getattr(payload, "full_name", None) or getattr(payload, "name", "User")
     user_role = getattr(payload, "role", "Patient") or "Patient"
 
     user_doc = {
         "email": email,
-        "name": payload.name.strip(),
+        "name": user_name.strip(),
         "role": user_role,
         "password_hash": hash_password(payload.password),
     }
@@ -82,13 +84,13 @@ async def register(payload: UserRegister):
         "user": {
             "id": user_id,
             "email": email,
-            "name": payload.name.strip(),
+            "name": user_name.strip(),
             "role": user_role,
         },
     }
 
 
-# 2. LOGIN (Accepts JSON Body)
+# 2. LOGIN (Case-insensitive Role & Email handling)
 @router.post("/login")
 @router.post("/login/")
 async def login(payload: UserLogin):
@@ -104,6 +106,15 @@ async def login(payload: UserLogin):
 
     user_id = str(user["_id"])
     role = user.get("role", "Patient")
+    
+    # Optional role checking if provided in request
+    req_role = getattr(payload, "role", None)
+    if req_role and req_role.lower() != role.lower():
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"User exists but role does not match '{req_role}'",
+        )
+
     access_token = create_access_token(
         data={"sub": user_id, "email": user["email"], "role": role}
     )

@@ -1,22 +1,15 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import os
+from motor.motor_asyncio import AsyncIOMotorClient
 
-DATABASE_URL = "sqlite:///./medcore.db"
+# Environment Variables extraction with local MongoDB fallbacks
+MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+DATABASE_NAME = os.getenv("DATABASE_NAME", "med_core_hms")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False},
-)
+# Initialize Motor Async Client for MongoDB
+client = AsyncIOMotorClient(MONGODB_URL)
+db = client[DATABASE_NAME]
 
-SessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-)
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Helper function to get database instance if needed in endpoints
+async def get_database():
+    return db
