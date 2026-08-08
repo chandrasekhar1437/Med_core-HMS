@@ -18,13 +18,14 @@ from app.api.v1.endpoints import (
 
 app = FastAPI(title="Med-core HMS")
 
-# Enable CORS for frontend integration
+# Enable CORS for frontend & localtunnel integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Register v1 Routers
