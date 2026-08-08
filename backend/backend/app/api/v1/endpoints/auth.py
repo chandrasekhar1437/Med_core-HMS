@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from typing import Dict, Any
 from bson import ObjectId
+import traceback
 
 from app.core.database import db
 from app.core.security import (
@@ -47,88 +48,110 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
     return user
 
 
-# 1. REGISTER (Accepts both 'name' and 'full_name' flexibly)
+# 1. REGISTER
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 @router.post("/register/", status_code=status.HTTP_201_CREATED)
 async def register(payload: UserRegister):
-    email = payload.email.lower().strip()
-    
-    existing = await db.users.find_one({"email": email})
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User with this email already exists",
+    try:
+        email = payload.email.lower().strip()
+        
+        existing = await db.users.find_one({"email": email})
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists",
+            )
+
+        # Handle both full_name and name cleanly
+        raw_name = getattr(payload, "full_name", None) or getattr(payload, "name", "User")
+        user_name = str(raw_name).strip() if raw_name else "User"
+        user_role = getattr(payload, "role", "Patient") or "Patient"
+
+        user_doc = {
+            "email": email,
+            "name": user_name,
+            "role": user_role,
+            "password_hash": hash_password(payload.password),
+        }
+        
+        result = await db.users.insert_one(user_doc)
+        user_id = str(result.inserted_id)
+
+        access_token = create_access_token(
+            data={"sub": user_id, "email": email, "role": user_role}
         )
 
-    # Handle both full_name and name
-    user_name = getattr(payload, "full_name", None) or getattr(payload, "name", "User")
-    user_role = getattr(payload, "role", "Patient") or "Patient"
-
-    user_doc = {
-        "email": email,
-        "name": user_name.strip(),
-        "role": user_role,
-        "password_hash": hash_password(payload.password),
-    }
-    
-    result = await db.users.insert_one(user_doc)
-    user_id = str(result.inserted_id)
-
-    access_token = create_access_token(
-        data={"sub": user_id, "email": email, "role": user_role}
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user_id,
-            "email": email,
-            "name": user_name.strip(),
-            "role": user_role,
-        },
-    }
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user_id,
+                "email": email,
+                "name": user_name,
+                "role": user_role,
+            },
+        }
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print("\n--- REGISTRATION ERROR TRACEBACK ---")
+        traceback.print_exc()
+        print("------------------------------------\n")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registration failed: {str(e)}",
+        )
 
 
-# 2. LOGIN (Case-insensitive Role & Email handling)
+# 2. LOGIN
 @router.post("/login")
 @router.post("/login/")
 async def login(payload: UserLogin):
-    email = payload.email.lower().strip()
-    password = payload.password
+    try:
+        email = payload.email.lower().strip()
+        password = payload.password
 
-    user = await db.users.find_one({"email": email})
-    if not user or not verify_password(password, user.get("password_hash", "")):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
+        user = await db.users.find_one({"email": email})
+        if not user or not verify_password(password, user.get("password_hash", "")):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+            )
+
+        user_id = str(user["_id"])
+        role = user.get("role", "Patient")
+        
+        req_role = getattr(payload, "role", None)
+        if req_role and req_role.lower() != role.lower():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"User exists but role does not match '{req_role}'",
+            )
+
+        access_token = create_access_token(
+            data={"sub": user_id, "email": user["email"], "role": role}
         )
 
-    user_id = str(user["_id"])
-    role = user.get("role", "Patient")
-    
-    # Optional role checking if provided in request
-    req_role = getattr(payload, "role", None)
-    if req_role and req_role.lower() != role.lower():
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user_id,
+                "email": user["email"],
+                "name": user.get("name", "User"),
+                "role": role,
+            },
+        }
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print("\n--- LOGIN ERROR TRACEBACK ---")
+        traceback.print_exc()
+        print("------------------------------\n")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"User exists but role does not match '{req_role}'",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Login failed: {str(e)}",
         )
-
-    access_token = create_access_token(
-        data={"sub": user_id, "email": user["email"], "role": role}
-    )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user_id,
-            "email": user["email"],
-            "name": user.get("name", "User"),
-            "role": role,
-        },
-    }
 
 
 # 3. GET CURRENT USER PROFILE
@@ -137,7 +160,7 @@ async def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
     return current_user
 
 
-# 4. UPDATE PROFILE (Name & Email)
+# 4. UPDATE PROFILE
 @router.patch("/me")
 async def update_user_profile(
     payload: UserUpdate,

@@ -16,9 +16,13 @@ from app.api.v1.endpoints import (
     users,
 )
 
-app = FastAPI(title="Med-core HMS")
+app = FastAPI(
+    title="Med-core HMS",
+    description="Backend API for Hospital Management System",
+    version="1.0.0"
+)
 
-# Enable CORS for frontend & localtunnel integration
+# Enable CORS for frontend, localtunnel & Netlify integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,7 +32,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Register v1 Routers
+# Register Primary v1 Routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["patients"])
 app.include_router(doctors.router, prefix="/api/v1/doctors", tags=["doctors"])
@@ -41,7 +45,15 @@ app.include_router(pharmacy.router, prefix="/api/v1/pharmacy", tags=["pharmacy"]
 app.include_router(settings.router, prefix="/api/v1/settings", tags=["settings"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
+# Fallback Fallback Routers (Fixes potential 404s if frontend calls without /api/v1)
+app.include_router(auth.router, prefix="/auth", tags=["auth-fallback"])
+
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Med-core HMS API"}
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "Med-core HMS API"}
