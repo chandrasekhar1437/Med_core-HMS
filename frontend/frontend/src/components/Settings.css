@@ -1,0 +1,285 @@
+/* ==================================================
+   GLOBAL PAGE
+================================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+.page-container {
+  width: 100%;
+  min-height: calc(100vh - 78px);
+  padding: 32px;
+  background:
+    linear-gradient(
+      135deg,
+      #f5f8fc 0%,
+      #edf3f9 100%
+    );
+  color: #1d2b3a;
+}
+
+
+/* ==================================================
+   PAGE HEADER
+================================================== */
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.page-heading h1 {
+  margin: 0;
+  color: #17324d;
+  font-size: 34px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+}
+
+.page-heading p {
+  margin: 8px 0 0;
+  color: #687789;
+  font-size: 16px;
+}
+
+
+/* ==================================================
+   BUTTONS
+================================================== */
+
+.refresh-button,
+.retry-button,
+.edit-button,
+.delete-button {
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.refresh-button:hover,
+.retry-button:hover,
+.edit-button:hover,
+.delete-button:hover {
+  transform: translateY(-1px);
+}
+
+.refresh-button {
+  min-width: 125px;
+  padding: 11px 18px;
+  color: white;
+  background: #2563a6;
+  box-shadow: 0 5px 14px rgba(37, 99, 166, 0.2);
+}
+
+.refresh-button:hover {
+  background: #1d528a;
+}
+
+
+/* ==================================================
+   TABLE CARD
+================================================== */
+
+.table-card {
+  overflow: hidden;
+  background: white;
+  border: 1px solid #dce5ee;
+  border-radius: 14px;
+  box-shadow:
+    0 10px 30px rgba(24, 48, 73, 0.08);
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+
+/* ==================================================
+   TABLE
+================================================== */
+
+.management-table {
+  width: 100%;
+  min-width: 1000px;
+  border-collapse: collapse;
+}
+
+.management-table thead {
+  background:
+    linear-gradient(
+      90deg,
+      #1d4f7d,
+      #286497
+    );
+}
+
+.management-table th {
+  padding: 17px 18px;
+  color: white;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.management-table td {
+  padding: 17px 18px;
+  color: #34485c;
+  font-size: 15px;
+  border-bottom: 1px solid #e8eef4;
+}
+
+.management-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.management-table tbody tr:nth-child(even) {
+  background: #f8fbfd;
+}
+
+.management-table tbody tr:hover {
+  background: #edf6ff;
+}
+
+.management-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+
+/* ==================================================
+   ACTION BUTTONS
+================================================== */
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.edit-button {
+  padding: 8px 13px;
+  color: #175d9c;
+  background: #e6f2fc;
+}
+
+.edit-button:hover {
+  background: #d4eafb;
+}
+
+.delete-button {
+  padding: 8px 13px;
+  color: #b32938;
+  background: #fee9eb;
+}
+
+.delete-button:hover {
+  background: #fbd8dc;
+}
+
+
+/* ==================================================
+   LOADING
+================================================== */
+
+.loading-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  padding: 30px;
+  color: #496176;
+  background: white;
+  border: 1px solid #dce5ee;
+  border-radius: 14px;
+  font-size: 17px;
+  box-shadow:
+    0 10px 30px rgba(24, 48, 73, 0.06);
+}
+
+
+/* ==================================================
+   ERROR
+================================================== */
+
+.error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 22px;
+  color: #84202b;
+  background: #fff2f3;
+  border: 1px solid #f4c7cc;
+  border-left: 5px solid #dc3545;
+  border-radius: 12px;
+}
+
+.error-box strong {
+  font-size: 17px;
+}
+
+.error-box span {
+  color: #a23b46;
+}
+
+.retry-button {
+  margin-top: 5px;
+  padding: 9px 15px;
+  color: white;
+  background: #c52f3e;
+}
+
+.retry-button:hover {
+  background: #a92533;
+}
+
+
+/* ==================================================
+   EMPTY STATE
+================================================== */
+
+.empty-box {
+  padding: 45px 25px;
+  color: #66788a;
+  text-align: center;
+  background: white;
+  border: 1px solid #dce5ee;
+  border-radius: 14px;
+  font-size: 16px;
+}
+
+
+/* ==================================================
+   RESPONSIVE
+================================================== */
+
+@media (max-width: 760px) {
+  .page-container {
+    padding: 22px 16px;
+  }
+
+  .page-heading {
+    flex-direction: column;
+  }
+
+  .page-heading h1 {
+    font-size: 28px;
+  }
+
+  .refresh-button {
+    width: 100%;
+  }
+}
