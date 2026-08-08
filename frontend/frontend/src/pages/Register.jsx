@@ -30,15 +30,29 @@ export default function Register() {
     setLoading(true);
     setError("");
 
+    // Backend compatibility: sending both name and full_name
     const payload = {
       name: name.trim(),
+      full_name: name.trim(),
       email: email.trim(),
       password: password,
       role: role,
     };
 
     try {
-      const response = await API.post("/auth/register", payload);
+      // Trying primary endpoint path
+      let response;
+      try {
+        response = await API.post("/api/v1/auth/register", payload);
+      } catch (firstErr) {
+        // Fallback endpoint path if baseURL already contains /api/v1
+        if (firstErr.response && firstErr.response.status === 404) {
+          response = await API.post("/auth/register", payload);
+        } else {
+          throw firstErr;
+        }
+      }
+
       const { access_token, user } = response.data;
 
       const handleAuthLogin = loginUser || login;
@@ -58,7 +72,7 @@ export default function Register() {
       } else if (typeof detail === "string") {
         setError(detail);
       } else {
-        setError("Registration failed (404 / Server error). Check backend terminal.");
+        setError("Registration failed (Server error). Check backend terminal.");
       }
     } finally {
       setLoading(false);
