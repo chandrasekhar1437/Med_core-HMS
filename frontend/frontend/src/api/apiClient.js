@@ -1,27 +1,36 @@
-const BASE_URL = "http://localhost:8000/api/v1";
+import axios from 'axios';
 
-export async function apiFetch(endpoint, options = {}) {
-  const token = localStorage.getItem("token");
+const apiClient = axios.create({
+  baseURL: 'https://med-core-hms-backend.onrender.com/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers || {}),
-  };
+// Request Interceptor: Pass JWT token automatically
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
+// Response Interceptor: Handle expired tokens
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
   }
+);
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (response.status === 401) {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
-    throw new Error("Session expired. Please log in again.");
-  }
-
-  return response;
-}
+export default apiClient;
