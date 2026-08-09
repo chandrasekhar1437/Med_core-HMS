@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-// Local Tunnel API URL & Fallback
-const API_BASE_URL = 'https://evil-ladybug-46.loca.lt/api/v1';
+// Static Ngrok Tunnel API URL
+const API_BASE_URL = 'https://recant-faculty-sepia.ngrok-free.dev/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'bypass-tunnel-reminder': 'true', // Localtunnel verification page రాకుండా బైపాస్ చేస్తుంది
+    'ngrok-skip-browser-warning': 'true', // ngrok వార్నింగ్ పేజీ రాకుండా బైపాస్ చేస్తుంది
   },
 });
 
