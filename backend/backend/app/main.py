@@ -19,11 +19,10 @@ from app.api.v1.endpoints import (
 app = FastAPI(
     title="Med-core HMS",
     description="Backend API for Hospital Management System",
-    version="1.0.0"
+    version="1.0.0",
 )
 
-# Enable CORS for production requests
-# Note: allow_credentials must be False when allow_origins=["*"] for browser compliance
+# Enable CORS for all incoming requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,7 +32,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Primary v1 Routers (Matches baseURL in apiClient.js)
+# Primary v1 Routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["patients"])
 app.include_router(doctors.router, prefix="/api/v1/doctors", tags=["doctors"])
@@ -53,12 +52,24 @@ app.include_router(doctors.router, prefix="/doctors", tags=["doctors-fallback"])
 app.include_router(appointments.router, prefix="/appointments", tags=["appointments-fallback"])
 app.include_router(users.router, prefix="/users", tags=["users-fallback"])
 
+
 @app.get("/")
 @app.head("/")
 def read_root():
     return {"status": "ok", "message": "Welcome to Med-core HMS API"}
 
+
 @app.get("/health")
 @app.head("/health")
 def health_check():
     return {"status": "healthy", "service": "Med-core HMS API"}
+
+
+# Print loaded routes on startup to confirm registration in Render logs
+@app.on_event("startup")
+async def startup_event():
+    print("\n================ REGISTERED ROUTES ================")
+    for route in app.routes:
+        if hasattr(route, "path") and hasattr(route, "methods"):
+            print(f"Path: {route.path} | Methods: {route.methods}")
+    print("====================================================\n")
