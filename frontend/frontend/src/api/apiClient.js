@@ -1,9 +1,13 @@
 import axios from 'axios';
 
+// Local Tunnel API URL & Fallback
+const API_BASE_URL = 'https://evil-ladybug-46.loca.lt/api/v1';
+
 const apiClient = axios.create({
-  baseURL: 'https://med-core-hms-backend.onrender.com/api/v1',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'bypass-tunnel-reminder': 'true', // Localtunnel verification page రాకుండా బైపాస్ చేస్తుంది
   },
 });
 
@@ -19,7 +23,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle expired tokens
+// Response Interceptor: Handle expired tokens & tunnel issues
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
