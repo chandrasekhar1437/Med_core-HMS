@@ -6,4 +6,5 @@ python-dotenv
 PyJWT
 bcrypt
 pydantic
+email-validator
 sqlalchemy
