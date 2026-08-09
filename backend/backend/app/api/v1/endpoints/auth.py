@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from bson import ObjectId
 import traceback
 
@@ -20,6 +20,18 @@ from app.schemas.user import (
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+def normalize_role(role: Optional[str]) -> str:
+    """Normalizes role variations (e.g., Admin vs Administrator) for clean comparisons."""
+    if not role:
+        return "patient"
+    r = str(role).strip().lower()
+    if r in ["admin", "administrator"]:
+        return "administrator"
+    if r in ["staff", "nurse", "medical staff", "medical staff / nurse"]:
+        return "medical staff / nurse"
+    return r
 
 
 # HELPER: Get authenticated user from JWT token
@@ -53,8 +65,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
 @router.post("/register/", status_code=status.HTTP_201_CREATED)
 async def register(payload: UserRegister):
     try:
-        email = payload.email.lower().strip()
-        
+        email = str(payload.email).lower().strip()
+
+        # Check existing user
         existing = await db.users.find_one({"email": email})
         if existing:
             raise HTTPException(
@@ -62,21 +75,32 @@ async def register(payload: UserRegister):
                 detail="User with this email already exists",
             )
 
-        # Handle both full_name and name cleanly
-        raw_name = getattr(payload, "full_name", None) or getattr(payload, "name", "User")
+        # Handle name variations safely
+        raw_name = (
+            getattr(payload, "full_name", None)
+            or getattr(payload, "name", None)
+            or "User"
+        )
         user_name = str(raw_name).strip() if raw_name else "User"
-        user_role = getattr(payload, "role", "Patient") or "Patient"
 
+        # Handle role
+        raw_role = getattr(payload, "role", "Patient") or "Patient"
+        user_role = str(raw_role).strip()
+
+        # Document structure
         user_doc = {
             "email": email,
             "name": user_name,
+            "full_name": user_name,
             "role": user_role,
             "password_hash": hash_password(payload.password),
         }
-        
+
+        # Insert to MongoDB
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
 
+        # Create JWT Access Token
         access_token = create_access_token(
             data={"sub": user_id, "email": email, "role": user_role}
         )
@@ -88,6 +112,7 @@ async def register(payload: UserRegister):
                 "id": user_id,
                 "email": email,
                 "name": user_name,
+                "full_name": user_name,
                 "role": user_role,
             },
         }
@@ -108,9 +133,10 @@ async def register(payload: UserRegister):
 @router.post("/login/")
 async def login(payload: UserLogin):
     try:
-        email = payload.email.lower().strip()
+        email = str(payload.email).lower().strip()
         password = payload.password
 
+        # Query user
         user = await db.users.find_one({"email": email})
         if not user or not verify_password(password, user.get("password_hash", "")):
             raise HTTPException(
@@ -119,18 +145,22 @@ async def login(payload: UserLogin):
             )
 
         user_id = str(user["_id"])
-        role = user.get("role", "Patient")
-        
+        db_role = user.get("role", "Patient")
+
+        # Flexible role validation using normalize_role helper
         req_role = getattr(payload, "role", None)
-        if req_role and req_role.lower() != role.lower():
+        if req_role and normalize_role(req_role) != normalize_role(db_role):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"User exists but role does not match '{req_role}'",
+                detail=f"User exists as '{db_role}' but selected '{req_role}'",
             )
 
+        # Generate Token
         access_token = create_access_token(
-            data={"sub": user_id, "email": user["email"], "role": role}
+            data={"sub": user_id, "email": user["email"], "role": db_role}
         )
+
+        user_name = user.get("name") or user.get("full_name") or "User"
 
         return {
             "access_token": access_token,
@@ -138,8 +168,9 @@ async def login(payload: UserLogin):
             "user": {
                 "id": user_id,
                 "email": user["email"],
-                "name": user.get("name", "User"),
-                "role": role,
+                "name": user_name,
+                "full_name": user_name,
+                "role": db_role,
             },
         }
     except HTTPException as he:
@@ -164,17 +195,21 @@ async def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
 @router.patch("/me")
 async def update_user_profile(
     payload: UserUpdate,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     user_id = current_user["id"]
     updates = {}
 
     if payload.name:
-        updates["name"] = payload.name.strip()
+        clean_name = payload.name.strip()
+        updates["name"] = clean_name
+        updates["full_name"] = clean_name
 
     if payload.email:
         new_email = payload.email.lower().strip()
-        existing = await db.users.find_one({"email": new_email, "_id": {"$ne": ObjectId(user_id)}})
+        existing = await db.users.find_one(
+            {"email": new_email, "_id": {"$ne": ObjectId(user_id)}}
+        )
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -189,7 +224,7 @@ async def update_user_profile(
         )
 
     await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": updates})
-    
+
     updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
     updated_user["id"] = str(updated_user.pop("_id"))
     updated_user.pop("password_hash", None)
@@ -200,7 +235,7 @@ async def update_user_profile(
 @router.post("/change-password")
 async def change_password(
     payload: PasswordChange,
-    current_user: Dict[str, Any] = Depends(get_current_user)
+    current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     user_id = current_user["id"]
 
@@ -212,6 +247,8 @@ async def change_password(
         )
 
     new_hash = hash_password(payload.new_password)
-    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"password_hash": new_hash}})
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)}, {"$set": {"password_hash": new_hash}}
+    )
 
     return {"message": "Password updated successfully"}
