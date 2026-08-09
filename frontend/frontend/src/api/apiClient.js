@@ -1,17 +1,17 @@
 import axios from 'axios';
 
-// Static Ngrok Tunnel API URL
-const API_BASE_URL = 'https://recant-faculty-sepia.ngrok-free.dev/api/v1';
+// Static Ngrok Tunnel API URL (బాడీ లో /api/v1 తీసేయండి)
+const API_BASE_URL = 'https://recant-faculty-sepia.ngrok-free.dev';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true', // ngrok వార్నింగ్ పేజీ రాకుండా బైపాస్ చేస్తుంది
+    'ngrok-skip-browser-warning': 'true',
   },
 });
 
-// Request Interceptor: Pass JWT token automatically
+// Request Interceptor
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -23,7 +23,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor: Handle expired tokens & tunnel issues
+// Response Interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
