@@ -1,3 +1,4 @@
+python-dotenv
 fastapi
 uvicorn
 motor
@@ -5,4 +6,5 @@ pymongo
 passlib[bcrypt]
 bcrypt
 python-jose[cryptography]
-pydantic[email]
+pydantic
+sqlalchemy
