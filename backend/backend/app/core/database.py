@@ -1,5 +1,5 @@
-﻿import motor.motor_asyncio
-import os
+﻿import os
+import motor.motor_asyncio
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -7,7 +7,11 @@ from sqlalchemy.orm import sessionmaker
 # ==========================================
 # 1. MongoDB Setup (For auth.py, patients.py)
 # ==========================================
-MONGO_DETAILS = os.getenv("MONGO_DETAILS", "mongodb://localhost:27017")
+# Replace <username> and <password> with your actual MongoDB Atlas database credentials.
+# Make sure to remove the angle brackets (< >) when inserting your details.
+DEFAULT_ATLAS_URL = "mongodb+srv://<username>:<password>@cluster0.7gppjmr.mongodb.net/med_core_hms?retryWrites=true&w=majority"
+
+MONGO_DETAILS = os.getenv("MONGO_DETAILS", DEFAULT_ATLAS_URL)
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DETAILS)
 db = client.med_core_hms  # This provides the 'db' import
 
