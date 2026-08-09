@@ -4,7 +4,9 @@ motor
 pymongo
 python-dotenv
 PyJWT
+passlib[bcrypt]
 bcrypt
 pydantic
+pydantic-settings
 email-validator
 sqlalchemy
