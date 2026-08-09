@@ -5,17 +5,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Load environment variables from .env file
+# Load environment variables from .env file (if present locally)
 load_dotenv()
 
 # ==========================================
 # 1. MongoDB Setup (For auth.py, patients.py)
 # ==========================================
-# Read MONGO_DETAILS directly from .env
-MONGO_DETAILS = os.getenv("MONGO_DETAILS")
+# Reads MONGO_DETAILS or fallback MONGODB_URL from .env or Render environment
+MONGO_DETAILS = os.getenv("MONGO_DETAILS") or os.getenv("MONGODB_URL")
 
 if not MONGO_DETAILS:
-    raise ValueError("MONGO_DETAILS environment variable is missing in .env file!")
+    raise ValueError("MONGO_DETAILS environment variable is missing!")
 
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DETAILS)
 db = client.med_core_hms  # Database instance
