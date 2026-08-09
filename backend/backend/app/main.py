@@ -22,11 +22,12 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Enable CORS for all incoming production origins (Render, Netlify, Localhost)
+# Enable CORS for production requests
+# Note: allow_credentials must be False when allow_origins=["*"] for browser compliance
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -45,7 +46,7 @@ app.include_router(pharmacy.router, prefix="/api/v1/pharmacy", tags=["pharmacy"]
 app.include_router(settings.router, prefix="/api/v1/settings", tags=["settings"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
-# Fallback Routers (Fixes potential 404s if frontend calls without /api/v1 prefix)
+# Fallback Routers
 app.include_router(auth.router, prefix="/auth", tags=["auth-fallback"])
 app.include_router(patients.router, prefix="/patients", tags=["patients-fallback"])
 app.include_router(doctors.router, prefix="/doctors", tags=["doctors-fallback"])
@@ -53,9 +54,11 @@ app.include_router(appointments.router, prefix="/appointments", tags=["appointme
 app.include_router(users.router, prefix="/users", tags=["users-fallback"])
 
 @app.get("/")
+@app.head("/")
 def read_root():
     return {"status": "ok", "message": "Welcome to Med-core HMS API"}
 
 @app.get("/health")
+@app.head("/health")
 def health_check():
     return {"status": "healthy", "service": "Med-core HMS API"}

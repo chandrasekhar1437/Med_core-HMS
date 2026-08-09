@@ -4,27 +4,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Safely attempt to load dotenv for local development
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
-# Retrieve variables from environment
 MONGO_DETAILS = os.getenv("MONGO_DETAILS", "mongodb://localhost:27017")
 DB_NAME = os.getenv("DB_NAME", "med_core_hms")
 
-# Initialize Motor Client with explicit TLS flags for Linux containers
-client = motor.motor_asyncio.AsyncIOMotorClient(
-    MONGO_DETAILS,
-    tls=True,
-    tlsAllowInvalidCertificates=True
-)
-
+# Clean Motor client initialization for Atlas SRV URIs
+client = motor.motor_asyncio.AsyncIOMotorClient(MONGO_DETAILS)
 db = client[DB_NAME]
 
-# SQLAlchemy setup (billing)
+# SQLAlchemy setup for relational DB / billing
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:///./sql_app.db")
 connect_args = {"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
 
