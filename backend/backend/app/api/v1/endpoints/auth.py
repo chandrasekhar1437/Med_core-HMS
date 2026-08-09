@@ -23,7 +23,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
 def normalize_role(role: Optional[str]) -> str:
-    """Normalizes role variations (e.g., Admin vs Administrator) for clean comparisons."""
+    """Normalizes role variations (e.g., Admin vs Administrator) for accurate comparison."""
     if not role:
         return "patient"
     r = str(role).strip().lower()
@@ -34,7 +34,6 @@ def normalize_role(role: Optional[str]) -> str:
     return r
 
 
-# HELPER: Get authenticated user from JWT token
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -67,7 +66,7 @@ async def register(payload: UserRegister):
     try:
         email = str(payload.email).lower().strip()
 
-        # Check existing user
+        # Check for existing user
         existing = await db.users.find_one({"email": email})
         if existing:
             raise HTTPException(
@@ -75,19 +74,11 @@ async def register(payload: UserRegister):
                 detail="User with this email already exists",
             )
 
-        # Handle name variations safely
-        raw_name = (
-            getattr(payload, "full_name", None)
-            or getattr(payload, "name", None)
-            or "User"
-        )
-        user_name = str(raw_name).strip() if raw_name else "User"
+        # Name extraction fallback
+        raw_name = payload.full_name or payload.name or "User"
+        user_name = str(raw_name).strip()
+        user_role = str(payload.role or "Patient").strip()
 
-        # Handle role
-        raw_role = getattr(payload, "role", "Patient") or "Patient"
-        user_role = str(raw_role).strip()
-
-        # Document structure
         user_doc = {
             "email": email,
             "name": user_name,
@@ -96,11 +87,9 @@ async def register(payload: UserRegister):
             "password_hash": hash_password(payload.password),
         }
 
-        # Insert to MongoDB
         result = await db.users.insert_one(user_doc)
         user_id = str(result.inserted_id)
 
-        # Create JWT Access Token
         access_token = create_access_token(
             data={"sub": user_id, "email": email, "role": user_role}
         )
@@ -136,7 +125,6 @@ async def login(payload: UserLogin):
         email = str(payload.email).lower().strip()
         password = payload.password
 
-        # Query user
         user = await db.users.find_one({"email": email})
         if not user or not verify_password(password, user.get("password_hash", "")):
             raise HTTPException(
@@ -147,15 +135,13 @@ async def login(payload: UserLogin):
         user_id = str(user["_id"])
         db_role = user.get("role", "Patient")
 
-        # Flexible role validation using normalize_role helper
-        req_role = getattr(payload, "role", None)
+        req_role = payload.role
         if req_role and normalize_role(req_role) != normalize_role(db_role):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=f"User exists as '{db_role}' but selected '{req_role}'",
             )
 
-        # Generate Token
         access_token = create_access_token(
             data={"sub": user_id, "email": user["email"], "role": db_role}
         )
@@ -185,7 +171,7 @@ async def login(payload: UserLogin):
         )
 
 
-# 3. GET CURRENT USER PROFILE
+# 3. GET PROFILE
 @router.get("/me")
 async def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
     return current_user

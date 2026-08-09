@@ -1,27 +1,22 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 
-
 class UserRegister(BaseModel):
-    name: Optional[str] = "John Doe"
-    full_name: Optional[str] = "John Doe"
-    email: EmailStr = "user@medcore.com"
-    password: str = "SecretPassword123"
-    role: str = "Patient"
-
-
-class UserLogin(BaseModel):
-    email: EmailStr = "user@medcore.com"
-    password: str = "SecretPassword123"
+    email: EmailStr
+    password: str
+    name: Optional[str] = None
+    full_name: Optional[str] = None
     role: Optional[str] = "Patient"
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+    role: Optional[str] = None
 
 class UserUpdate(BaseModel):
-    name: Optional[str] = "Dr. John Doe"
-    full_name: Optional[str] = "Dr. John Doe"
-    email: Optional[EmailStr] = "newemail@medcore.com"
-
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
 
 class PasswordChange(BaseModel):
-    current_password: str = "SecretPassword123"
-    new_password: str = "NewSecretPassword2026"
+    current_password: str
+    new_password: str

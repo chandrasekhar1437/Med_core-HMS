@@ -15,6 +15,7 @@ except ImportError:
 MONGO_DETAILS = os.getenv("MONGO_DETAILS", "mongodb://localhost:27017")
 DB_NAME = os.getenv("DB_NAME", "med_core_hms")
 
+# Initialize Motor Client with explicit TLS flags for Linux containers
 client = motor.motor_asyncio.AsyncIOMotorClient(
     MONGO_DETAILS,
     tls=True,
@@ -23,6 +24,7 @@ client = motor.motor_asyncio.AsyncIOMotorClient(
 
 db = client[DB_NAME]
 
+# SQLAlchemy setup (billing)
 SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL", "sqlite:///./sql_app.db")
 connect_args = {"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
 
