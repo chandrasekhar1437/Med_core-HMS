@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Render నుండి కాపీ చేసిన మీ ఒరిజినల్ URL ని ఇక్కడ పెట్టండి
+// Render Backend Live Production URL
 const API_BASE_URL = 'https://med-core-hms-backend.onrender.com';
 
 const apiClient = axios.create({
@@ -8,9 +8,10 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 60000, // 60s timeout to accommodate Render Free Tier cold starts
 });
 
-// Request Interceptor
+// Request Interceptor: Pass JWT token automatically
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -22,7 +23,7 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor
+// Response Interceptor: Handle expired tokens & network errors
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
