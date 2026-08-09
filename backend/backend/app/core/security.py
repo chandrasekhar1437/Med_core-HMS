@@ -4,9 +4,10 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "medcore_hms_super_secret_key_2026")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 Hours
+# Reads SECRET_KEY or JWT_SECRET_KEY from Render environment variables
+SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY") or "medcore_hms_super_secret_key_2026"
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 60 * 24))
 
 
 def hash_password(password: str) -> str:

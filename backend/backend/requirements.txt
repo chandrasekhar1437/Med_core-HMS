@@ -1,10 +1,9 @@
-python-dotenv
 fastapi
 uvicorn
 motor
 pymongo
-passlib[bcrypt]
+python-dotenv
+PyJWT
 bcrypt
-python-jose[cryptography]
 pydantic
 sqlalchemy
