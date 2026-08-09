@@ -68,44 +68,7 @@ export default function Login() {
   return (
     <div style={styles.pageContainer}>
       <div style={styles.loginCard}>
-        {/* Left Side Decorative Panel */}
-        <div style={styles.brandPanel}>
-          <div style={styles.brandHeader}>
-            <div style={styles.logoBadge}>
-              <Activity size={28} color="#38bdf8" />
-            </div>
-            <div>
-              <h2 style={styles.brandTitle}>MedCore HMS</h2>
-              <p style={styles.brandSubtitle}>Healthcare Operations Suite</p>
-            </div>
-          </div>
-
-          <div style={styles.featureList}>
-            <div style={styles.featureItem}>
-              <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Real-time Patient Records & Medical Charts</span>
-            </div>
-            <div style={styles.featureItem}>
-              <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Doctor Scheduling & Appointment Booking</span>
-            </div>
-            <div style={styles.featureItem}>
-              <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Integrated Billing, PDF Invoices & Analytics</span>
-            </div>
-            <div style={styles.featureItem}>
-              <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Pharmacy Inventory & Laboratory Tracking</span>
-            </div>
-          </div>
-
-          <div style={styles.securityFooter}>
-            <ShieldCheck size={16} color="#94a3b8" />
-            <span>256-bit Encrypted Portal</span>
-          </div>
-        </div>
-
-        {/* Right Side Form Panel */}
+        {/* Left Side Form Panel */}
         <div style={styles.formPanel}>
           <div style={styles.formHeader}>
             <h1 style={styles.title}>Sign In</h1>
@@ -191,6 +154,43 @@ export default function Login() {
             </Link>
           </div>
         </div>
+
+        {/* Right Side Decorative Panel */}
+        <div style={styles.brandPanel}>
+          <div style={styles.brandHeader}>
+            <div style={styles.logoBadge}>
+              <Activity size={28} color="#38bdf8" />
+            </div>
+            <div>
+              <h2 style={styles.brandTitle}>MedCore HMS</h2>
+              <p style={styles.brandSubtitle}>Healthcare Operations Suite</p>
+            </div>
+          </div>
+
+          <div style={styles.featureList}>
+            <div style={styles.featureItem}>
+              <CheckCircle2 size={18} color="#38bdf8" />
+              <span>Real-time Patient Records & Medical Charts</span>
+            </div>
+            <div style={styles.featureItem}>
+              <CheckCircle2 size={18} color="#38bdf8" />
+              <span>Doctor Scheduling & Appointment Booking</span>
+            </div>
+            <div style={styles.featureItem}>
+              <CheckCircle2 size={18} color="#38bdf8" />
+              <span>Integrated Billing, PDF Invoices & Analytics</span>
+            </div>
+            <div style={styles.featureItem}>
+              <CheckCircle2 size={18} color="#38bdf8" />
+              <span>Pharmacy Inventory & Laboratory Tracking</span>
+            </div>
+          </div>
+
+          <div style={styles.securityFooter}>
+            <ShieldCheck size={16} color="#94a3b8" />
+            <span>256-bit Encrypted Portal</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -216,6 +216,15 @@ const styles = {
     overflow: "hidden",
     boxShadow: "0 20px 40px rgba(0, 0, 0, 0.35)",
   },
+  formPanel: {
+    flex: "1.2",
+    padding: "48px 40px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+    borderRight: "1px solid #e2e8f0",
+  },
   brandPanel: {
     flex: "1",
     backgroundColor: "#0b1329",
@@ -224,7 +233,6 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    borderRight: "1px solid #1e293b",
     minWidth: "340px",
   },
   brandHeader: {
@@ -272,14 +280,6 @@ const styles = {
     gap: "8px",
     fontSize: "12px",
     color: "#64748b",
-  },
-  formPanel: {
-    flex: "1.2",
-    padding: "48px 40px",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    backgroundColor: "#ffffff",
   },
   formHeader: {
     marginBottom: "24px",
