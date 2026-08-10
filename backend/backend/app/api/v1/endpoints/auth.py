@@ -2,7 +2,7 @@ import traceback
 from typing import Any, Dict, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from app.core.database import db
@@ -19,13 +19,31 @@ from app.schemas.user import (
     UserUpdate,
 )
 
-# 1. Initialize router BEFORE defining route decorators
+# 1. DEFINE ROUTER FIRST BEFORE ANY DECORATORS
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
+# Helper function to extract form data safely without breaking FastAPI inspect
+async def get_optional_form(request: Request) -> Optional[OAuth2PasswordRequestForm]:
+    try:
+        form = await request.form()
+        if "username" in form and "password" in form:
+            return OAuth2PasswordRequestForm(
+                grant_type=form.get("grant_type", "password"),
+                username=str(form.get("username")),
+                password=str(form.get("password")),
+                scope=str(form.get("scope", "")),
+                client_id=form.get("client_id"),
+                client_secret=form.get("client_secret"),
+            )
+    except Exception:
+        pass
+    return None
+
+
 def normalize_role(role: Optional[str]) -> str:
-    """Normalizes role variations (e.g., Admin vs Administrator) for accurate comparison."""
+    """Normalizes role variations for accurate comparison."""
     if not role:
         return "patient"
     r = str(role).strip().lower()
@@ -76,7 +94,6 @@ async def register(payload: UserRegister):
                 detail="User with this email already exists",
             )
 
-        # Name extraction fallback
         raw_name = payload.full_name or payload.name or "User"
         user_name = str(raw_name).strip()
         user_role = str(payload.role or "Patient").strip()
@@ -119,12 +136,12 @@ async def register(payload: UserRegister):
         )
 
 
-# 2. LOGIN (Supports both JSON payloads and Form Data for Swagger Authorize button)
+# 2. LOGIN (Handles JSON payloads & OAuth2 Form Data for Swagger UI)
 @router.post("/login")
 @router.post("/login/")
 async def login(
     payload: Optional[UserLogin] = None,
-    form_data: Optional[OAuth2PasswordRequestForm] = Depends(),
+    form_data: Optional[OAuth2PasswordRequestForm] = Depends(get_optional_form),
 ):
     try:
         email_raw = ""
