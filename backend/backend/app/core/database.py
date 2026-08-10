@@ -11,41 +11,56 @@ try:
 except ImportError:
     pass
 
-# Retrieve MongoDB URI and Database Name with fallback support
-MONGO_DETAILS = (
-    os.getenv("MONGO_DETAILS")
-    or os.getenv("MONGODB_URL")
-    or os.getenv("DATABASE_URL")
-    or "mongodb://localhost:27017"
-)
+# Client & Database holders for lazy loading
+_client = None
+_db = None
 
-DB_NAME = (
-    os.getenv("DB_NAME")
-    or os.getenv("DATABASE_NAME")
-    or "med_core_hms"
-)
+def get_mongo_url() -> str:
+    return (
+        os.getenv("MONGO_DETAILS")
+        or os.getenv("MONGODB_URL")
+        or os.getenv("DATABASE_URL")
+        or "mongodb://localhost:27017"
+    )
 
-# Determine if TLS/SSL is required (Atlas connections use mongodb+srv://)
-is_atlas = "mongodb+srv" in MONGO_DETAILS or "ssl=true" in MONGO_DETAILS.lower()
+def get_db_name() -> str:
+    return os.getenv("DB_NAME") or os.getenv("DATABASE_NAME") or "med_core_hms"
 
-client_kwargs = {
-    "serverSelectionTimeoutMS": 5000,
-}
+def get_mongo_client():
+    global _client
+    if _client is None:
+        mongo_url = get_mongo_url()
+        is_atlas = "mongodb+srv" in mongo_url or "ssl=true" in mongo_url.lower()
 
-if is_atlas:
-    client_kwargs["tls"] = True
-    client_kwargs["tlsAllowInvalidCertificates"] = True
+        client_kwargs = {
+            "serverSelectionTimeoutMS": 5000,
+        }
+        if is_atlas:
+            client_kwargs["tls"] = True
+            client_kwargs["tlsAllowInvalidCertificates"] = True
 
-# Initialize Motor AsyncIOMotorClient
-client = motor.motor_asyncio.AsyncIOMotorClient(
-    MONGO_DETAILS,
-    **client_kwargs
-)
+        _client = motor.motor_asyncio.AsyncIOMotorClient(mongo_url, **client_kwargs)
+    return _client
 
-# Active Async MongoDB Instance
-db = client[DB_NAME]
+class LazyDatabase:
+    """Wrapper that dynamically delegates collection access to active Motor DB."""
+    def __getattr__(self, name):
+        global _db
+        if _db is None:
+            client = get_mongo_client()
+            _db = client[get_db_name()]
+        return getattr(_db, name)
 
-# Helper function for endpoint dependency injection
+    def __getitem__(self, name):
+        global _db
+        if _db is None:
+            client = get_mongo_client()
+            _db = client[get_db_name()]
+        return _db[name]
+
+# Active MongoDB instance export
+db = LazyDatabase()
+
 async def get_database():
     return db
 
@@ -58,7 +73,6 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# SQLAlchemy Session Generator for FastAPI dependency injection
 def get_db():
     db_session = SessionLocal()
     try:
