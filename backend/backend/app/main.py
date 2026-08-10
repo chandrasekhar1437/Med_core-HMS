@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Direct module imports to bypass __init__.py package resolution issues
+# Import individual endpoint routers
 from app.api.v1.endpoints import (
     appointments,
     auth,
@@ -22,7 +22,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS for all incoming requests
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,7 +32,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Primary v1 Routers
+# Include primary v1 routers
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["patients"])
 app.include_router(doctors.router, prefix="/api/v1/doctors", tags=["doctors"])
@@ -44,13 +44,6 @@ app.include_router(laboratory.router, prefix="/api/v1/laboratory", tags=["labora
 app.include_router(pharmacy.router, prefix="/api/v1/pharmacy", tags=["pharmacy"])
 app.include_router(settings.router, prefix="/api/v1/settings", tags=["settings"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
-
-# Fallback Routers
-app.include_router(auth.router, prefix="/auth", tags=["auth-fallback"])
-app.include_router(patients.router, prefix="/patients", tags=["patients-fallback"])
-app.include_router(doctors.router, prefix="/doctors", tags=["doctors-fallback"])
-app.include_router(appointments.router, prefix="/appointments", tags=["appointments-fallback"])
-app.include_router(users.router, prefix="/users", tags=["users-fallback"])
 
 
 @app.get("/")
@@ -65,7 +58,7 @@ def health_check():
     return {"status": "healthy", "service": "Med-core HMS API"}
 
 
-# Print loaded routes on server start
+# Print all registered paths on server startup
 print("\n================ REGISTERED ROUTES ================")
 for route in app.routes:
     if hasattr(route, "path") and hasattr(route, "methods"):
