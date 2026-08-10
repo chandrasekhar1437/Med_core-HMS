@@ -20,11 +20,11 @@ from app.schemas.user import (
 
 # 1. Initialize router and OAuth2 bearer scheme
 router = APIRouter()
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/swagger-login")
 
 
 def normalize_role(role: Optional[str]) -> str:
-    """Normalizes role variations (e.g., Admin vs Administrator) for accurate comparison."""
+    """Normalizes role variations for accurate comparison."""
     if not role:
         return "patient"
     r = str(role).strip().lower()
@@ -118,30 +118,15 @@ async def register(payload: UserRegister):
         )
 
 
-# 2. LOGIN (Supports React JSON requests and Swagger Form-Data without Python 3.14 signature errors)
+# 2. LOGIN FOR FRONTEND (Accepts raw JSON body without 422 errors)
 @router.post("/login")
 @router.post("/login/")
-async def login(
-    request: Request,
-    form_data: OAuth2PasswordRequestForm = Depends(),
-):
+async def login(request: Request):
     try:
-        email_raw = ""
-        password = ""
-        req_role = None
-
-        content_type = request.headers.get("content-type", "")
-
-        # Handle JSON payload from React/Vite Frontend
-        if "application/json" in content_type:
-            body = await request.json()
-            email_raw = body.get("email") or body.get("username") or ""
-            password = body.get("password") or ""
-            req_role = body.get("role")
-        # Handle Form Data from Swagger UI Authorize Modal
-        else:
-            email_raw = form_data.username
-            password = form_data.password
+        body = await request.json()
+        email_raw = body.get("email") or body.get("username") or ""
+        password = body.get("password") or ""
+        req_role = body.get("role")
 
         email = str(email_raw).lower().strip()
 
@@ -159,13 +144,14 @@ async def login(
             )
 
         user_id = str(user["_id"])
-        db_role = user.get("role", "Patient")
+        db_role = user.get("role") or "Patient"
 
-        if req_role and normalize_role(req_role) != normalize_role(db_role):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"User exists as '{db_role}' but selected '{req_role}'",
-            )
+        if req_role:
+            if normalize_role(req_role) != normalize_role(db_role):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail=f"Account registered as '{db_role}'. Please change your selected role.",
+                )
 
         access_token = create_access_token(
             data={"sub": user_id, "email": user["email"], "role": db_role}
@@ -196,13 +182,48 @@ async def login(
         )
 
 
-# 3. GET PROFILE
+# 3. LOGIN FOR SWAGGER UI AUTHORIZE MODAL (Handles form-data)
+@router.post("/swagger-login", include_in_schema=False)
+async def swagger_login(form_data: OAuth2PasswordRequestForm = Depends()):
+    email = str(form_data.username).lower().strip()
+    password = form_data.password
+
+    user = await db.users.find_one({"email": email})
+    if not user or not verify_password(password, user.get("password_hash", "")):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+        )
+
+    user_id = str(user["_id"])
+    db_role = user.get("role", "Patient")
+
+    access_token = create_access_token(
+        data={"sub": user_id, "email": user["email"], "role": db_role}
+    )
+
+    user_name = user.get("name") or user.get("full_name") or "User"
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user_id,
+            "email": user["email"],
+            "name": user_name,
+            "full_name": user_name,
+            "role": db_role,
+        },
+    }
+
+
+# 4. GET PROFILE
 @router.get("/me")
 async def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
     return current_user
 
 
-# 4. UPDATE PROFILE
+# 5. UPDATE PROFILE
 @router.patch("/me")
 async def update_user_profile(
     payload: UserUpdate,
@@ -242,7 +263,7 @@ async def update_user_profile(
     return updated_user
 
 
-# 5. CHANGE PASSWORD
+# 6. CHANGE PASSWORD
 @router.post("/change-password")
 async def change_password(
     payload: PasswordChange,
