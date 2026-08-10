@@ -1,21 +1,11 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import {
+  getMedicines,
+  createMedicine,
+  updateMedicine,
+  deleteMedicine,
+} from "../services/pharmacyApi";
 import "./Pharmacy.css";
-
-const api = axios.create({
-  baseURL: "http://localhost:8000/api/v1/pharmacy",
-});
-
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 export default function Pharmacy() {
   const [medicines, setMedicines] = useState([]);
@@ -37,12 +27,17 @@ export default function Pharmacy() {
   const fetchMedicines = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/");
-      setMedicines(response.data);
       setError(null);
+      const data = await getMedicines();
+      setMedicines(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching pharmacy inventory:", err);
-      setError("Failed to load medicine stock inventory.");
+      const serverMsg = err.response?.data?.detail;
+      setError(
+        typeof serverMsg === "string"
+          ? serverMsg
+          : "Failed to load medicine stock inventory."
+      );
     } finally {
       setLoading(false);
     }
@@ -65,10 +60,10 @@ export default function Pharmacy() {
       };
 
       if (editingId) {
-        await api.patch(`/${editingId}`, payload);
+        await updateMedicine(editingId, payload);
         setEditingId(null);
       } else {
-        await api.post("/", payload);
+        await createMedicine(payload);
       }
 
       setForm({
@@ -81,7 +76,12 @@ export default function Pharmacy() {
       fetchMedicines();
     } catch (err) {
       console.error("Error saving medicine record:", err);
-      setError("Failed to save medicine record.");
+      const serverMsg = err.response?.data?.detail;
+      setError(
+        typeof serverMsg === "string"
+          ? serverMsg
+          : "Failed to save medicine record."
+      );
     }
   };
 
@@ -111,7 +111,7 @@ export default function Pharmacy() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to remove this medicine from inventory?")) return;
     try {
-      await api.delete(`/${id}`);
+      await deleteMedicine(id);
       fetchMedicines();
     } catch (err) {
       console.error("Error deleting medicine:", err);
