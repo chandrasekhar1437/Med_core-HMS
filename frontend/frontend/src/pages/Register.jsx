@@ -30,12 +30,10 @@ export default function Register() {
     setLoading(true);
     setError("");
 
-    // Clean inputs for mobile compatibility
     const cleanName = name.trim();
     const cleanEmail = email.toLowerCase().trim();
     const cleanPassword = password.trim();
 
-    // Backend compatibility: sending both name and full_name
     const payload = {
       name: cleanName,
       full_name: cleanName,
@@ -45,12 +43,10 @@ export default function Register() {
     };
 
     try {
-      // Primary endpoint path
       let response;
       try {
         response = await API.post("/auth/register", payload);
       } catch (firstErr) {
-        // Fallback endpoint path if route is prefixed with /api/v1
         if (firstErr.response && firstErr.response.status === 404) {
           response = await API.post("/api/v1/auth/register", payload);
         } else {
@@ -86,9 +82,25 @@ export default function Register() {
 
   return (
     <div style={styles.pageContainer}>
-      <div style={styles.registerCard}>
+      <style>
+        {`
+          @media (max-width: 820px) {
+            .responsive-card {
+              flex-direction: column !important;
+            }
+            .responsive-brand-panel {
+              display: none !important;
+            }
+            .responsive-form-panel {
+              padding: 32px 20px !important;
+              border-right: none !important;
+            }
+          }
+        `}
+      </style>
+      <div className="responsive-card" style={styles.registerCard}>
         {/* Left Side Form Panel */}
-        <div style={styles.formPanel}>
+        <div className="responsive-form-panel" style={styles.formPanel}>
           <div style={styles.formHeader}>
             <h1 style={styles.title}>Create Account</h1>
             <p style={styles.subtitle}>
@@ -193,7 +205,7 @@ export default function Register() {
         </div>
 
         {/* Right Side Branding Panel */}
-        <div style={styles.brandPanel}>
+        <div className="responsive-brand-panel" style={styles.brandPanel}>
           <div style={styles.brandHeader}>
             <div style={styles.logoBadge}>
               <Activity size={28} color="#38bdf8" />
@@ -243,6 +255,7 @@ const styles = {
     backgroundImage: "radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)",
     padding: "20px",
     fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    boxSizing: "border-box",
   },
   registerCard: {
     display: "flex",
@@ -261,6 +274,7 @@ const styles = {
     justifyContent: "center",
     backgroundColor: "#ffffff",
     borderRight: "1px solid #e2e8f0",
+    boxSizing: "border-box",
   },
   brandPanel: {
     flex: "1",
@@ -270,7 +284,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minWidth: "340px",
+    minWidth: "300px",
+    boxSizing: "border-box",
   },
   brandHeader: {
     display: "flex",

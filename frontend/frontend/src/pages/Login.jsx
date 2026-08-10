@@ -28,7 +28,6 @@ export default function Login() {
     setLoading(true);
     setError("");
 
-    // Normalize inputs for mobile browser compatibility
     const cleanEmail = email.toLowerCase().trim();
     const cleanPassword = password.trim();
 
@@ -46,7 +45,6 @@ export default function Login() {
         role: role,
       };
 
-      // Call authentication login method safely
       const handleAuthLogin = loginUser || login;
       if (typeof handleAuthLogin === "function") {
         handleAuthLogin(access_token, userData);
@@ -71,9 +69,25 @@ export default function Login() {
 
   return (
     <div style={styles.pageContainer}>
-      <div style={styles.loginCard}>
+      <style>
+        {`
+          @media (max-width: 820px) {
+            .responsive-card {
+              flex-direction: column !important;
+            }
+            .responsive-brand-panel {
+              display: none !important;
+            }
+            .responsive-form-panel {
+              padding: 32px 20px !important;
+              border-right: none !important;
+            }
+          }
+        `}
+      </style>
+      <div className="responsive-card" style={styles.loginCard}>
         {/* Left Side Form Panel */}
-        <div style={styles.formPanel}>
+        <div className="responsive-form-panel" style={styles.formPanel}>
           <div style={styles.formHeader}>
             <h1 style={styles.title}>Sign In</h1>
             <p style={styles.subtitle}>
@@ -166,7 +180,7 @@ export default function Login() {
         </div>
 
         {/* Right Side Decorative Panel */}
-        <div style={styles.brandPanel}>
+        <div className="responsive-brand-panel" style={styles.brandPanel}>
           <div style={styles.brandHeader}>
             <div style={styles.logoBadge}>
               <Activity size={28} color="#38bdf8" />
@@ -216,6 +230,7 @@ const styles = {
     backgroundImage: "radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)",
     padding: "20px",
     fontFamily: "'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    boxSizing: "border-box",
   },
   loginCard: {
     display: "flex",
@@ -234,6 +249,7 @@ const styles = {
     justifyContent: "center",
     backgroundColor: "#ffffff",
     borderRight: "1px solid #e2e8f0",
+    boxSizing: "border-box",
   },
   brandPanel: {
     flex: "1",
@@ -243,7 +259,8 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     justifyContent: "space-between",
-    minWidth: "340px",
+    minWidth: "300px",
+    boxSizing: "border-box",
   },
   brandHeader: {
     display: "flex",

@@ -199,6 +199,7 @@ const styles = {
     backgroundImage: 'radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%)',
     padding: '20px',
     fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+    boxSizing: 'border-box',
   },
   card: {
     width: '100%',
