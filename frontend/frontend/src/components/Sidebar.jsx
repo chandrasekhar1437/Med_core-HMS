@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -12,17 +12,23 @@ import {
   FlaskConical,
   Settings as SettingsIcon,
   LogOut,
+  Menu,
+  X,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
+    setMobileOpen(false);
     logout();
     navigate("/login");
   };
+
+  const closeMenu = () => setMobileOpen(false);
 
   const navItems = [
     { name: "Dashboard", path: "/", icon: <LayoutDashboard size={20} /> },
@@ -38,58 +44,139 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside style={styles.sidebar}>
-      {/* App Branding */}
-      <div style={styles.brandContainer}>
-        <h2 style={styles.brandTitle}>MedCore HMS</h2>
-        <span style={styles.brandSubtitle}>Hospital Ops System</span>
-      </div>
+    <>
+      <style>{`
+        /* Mobile Top Header for Sidebar Toggle */
+        .sidebar-mobile-topbar {
+          display: none;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #0f172a;
+          color: #ffffff;
+          padding: 12px 16px;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
 
-      {/* Navigation Links */}
-      <nav style={styles.navContainer}>
-        {navItems.map((item) => (
-          <NavLink
-            key={item.name}
-            to={item.path}
-            style={({ isActive }) => ({
-              ...styles.navLink,
-              ...(isActive ? styles.activeNavLink : {}),
-            })}
-          >
-            <span style={styles.iconWrapper}>{item.icon}</span>
-            <span>{item.name}</span>
-          </NavLink>
-        ))}
-      </nav>
+        .sidebar-mobile-title {
+          font-size: 1.1rem;
+          font-weight: bold;
+          color: #38bdf8;
+        }
 
-      {/* User Info & Logout Button */}
-      <div style={styles.userFooter}>
-        <div style={styles.userInfo}>
-          <span style={styles.userName}>{user?.name || "Admin Staff"}</span>
-          <span style={styles.userEmail}>{user?.email || "anil@gmail.com"}</span>
-        </div>
-        <button onClick={handleLogout} style={styles.logoutButton}>
-          <LogOut size={16} /> Logout
+        .sidebar-hamburger-btn {
+          background: none;
+          border: none;
+          color: #ffffff;
+          cursor: pointer;
+          padding: 4px;
+        }
+
+        /* Sidebar Main Layout */
+        .sidebar-root {
+          width: 250px;
+          height: 100vh;
+          background-color: #0f172a;
+          color: #f8fafc;
+          position: fixed;
+          top: 0;
+          left: 0;
+          display: flex;
+          flex-direction: column;
+          box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+          z-index: 1001;
+          transition: transform 0.3s ease;
+        }
+
+        .sidebar-backdrop {
+          display: none;
+        }
+
+        @media (max-width: 768px) {
+          .sidebar-mobile-topbar {
+            display: flex;
+          }
+
+          .sidebar-root {
+            transform: translateX(-100%);
+          }
+
+          .sidebar-root.is-mobile-open {
+            transform: translateX(0);
+          }
+
+          .sidebar-backdrop {
+            display: block;
+            position: fixed;
+            inset: 0;
+            background-color: rgba(15, 23, 42, 0.6);
+            z-index: 999;
+            backdrop-filter: blur(2px);
+          }
+        }
+      `}</style>
+
+      {/* Mobile Bar Header */}
+      <div className="sidebar-mobile-topbar">
+        <span className="sidebar-mobile-title">MedCore HMS</span>
+        <button
+          className="sidebar-hamburger-btn"
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label="Toggle Sidebar Menu"
+        >
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
-    </aside>
+
+      {/* Sidebar Drawer */}
+      <aside className={`sidebar-root ${mobileOpen ? "is-mobile-open" : ""}`}>
+        {/* App Branding */}
+        <div style={styles.brandContainer}>
+          <h2 style={styles.brandTitle}>MedCore HMS</h2>
+          <span style={styles.brandSubtitle}>Hospital Ops System</span>
+        </div>
+
+        {/* Navigation Links */}
+        <nav style={styles.navContainer}>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.name}
+              to={item.path}
+              onClick={closeMenu}
+              style={({ isActive }) => ({
+                ...styles.navLink,
+                ...(isActive ? styles.activeNavLink : {}),
+              })}
+            >
+              <span style={styles.iconWrapper}>{item.icon}</span>
+              <span>{item.name}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        {/* User Info & Logout Button */}
+        <div style={styles.userFooter}>
+          <div style={styles.userInfo}>
+            <span style={styles.userName}>{user?.name || "Admin Staff"}</span>
+            <span style={styles.userEmail}>{user?.email || "anil@gmail.com"}</span>
+          </div>
+          <button onClick={handleLogout} style={styles.logoutButton}>
+            <LogOut size={16} /> Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile Backdrop */}
+      {mobileOpen && <div className="sidebar-backdrop" onClick={closeMenu} />}
+    </>
   );
 }
 
 const styles = {
-  sidebar: {
-    width: "250px",
-    height: "100vh",
-    backgroundColor: "#0f172a",
-    color: "#f8fafc",
-    position: "fixed",
-    top: 0,
-    left: 0,
-    display: "flex",
-    flexDirection: "column",
-    boxShadow: "2px 0 10px rgba(0, 0, 0, 0.1)",
-    zIndex: 1000,
-  },
   brandContainer: {
     padding: "1.5rem 1.25rem",
     borderBottom: "1px solid #1e293b",
