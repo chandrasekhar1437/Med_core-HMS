@@ -22,6 +22,8 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const role = (user?.role || "patient").toLowerCase();
+
   const handleLogout = () => {
     setMobileOpen(false);
     logout();
@@ -30,18 +32,49 @@ export default function Sidebar() {
 
   const closeMenu = () => setMobileOpen(false);
 
-  const navItems = [
-    { name: "Dashboard", path: "/", icon: <LayoutDashboard size={20} /> },
-    { name: "Patients", path: "/patients", icon: <Users size={20} /> },
-    { name: "Doctors", path: "/doctors", icon: <UserCheck size={20} /> },
-    { name: "Appointments", path: "/appointments", icon: <Calendar size={20} /> },
-    { name: "Prescriptions", path: "/prescriptions", icon: <FileText size={20} /> },
-    { name: "Billing", path: "/billing", icon: <DollarSign size={20} /> },
-    { name: "Medical Records", path: "/medical-records", icon: <Activity size={20} /> },
-    { name: "Pharmacy", path: "/pharmacy", icon: <Pill size={20} /> },
-    { name: "Laboratory", path: "/laboratory", icon: <FlaskConical size={20} /> },
-    { name: "Settings", path: "/settings", icon: <SettingsIcon size={20} /> },
-  ];
+  // Define navigation items based on user role
+  const navByRole = {
+    admin: [
+      { name: "Dashboard", path: "/", icon: <LayoutDashboard size={20} /> },
+      { name: "Staff & Doctors", path: "/doctors", icon: <UserCheck size={20} /> },
+      { name: "Patient Records", path: "/patients", icon: <Users size={20} /> },
+      { name: "Appointments", path: "/appointments", icon: <Calendar size={20} /> },
+      { name: "Financials & Billing", path: "/billing", icon: <DollarSign size={20} /> },
+      { name: "Pharmacy Stock", path: "/pharmacy", icon: <Pill size={20} /> },
+      { name: "Laboratory", path: "/laboratory", icon: <FlaskConical size={20} /> },
+      { name: "Settings", path: "/settings", icon: <SettingsIcon size={20} /> },
+    ],
+    doctor: [
+      { name: "Doctor Dashboard", path: "/", icon: <LayoutDashboard size={20} /> },
+      { name: "Appointment Queue", path: "/appointments", icon: <Calendar size={20} /> },
+      { name: "My Patients", path: "/patients", icon: <Users size={20} /> },
+      { name: "EHR & Medical Notes", path: "/medical-records", icon: <Activity size={20} /> },
+      { name: "Digital Prescriptions", path: "/prescriptions", icon: <FileText size={20} /> },
+    ],
+    nurse: [
+      { name: "Staff Dashboard", path: "/", icon: <LayoutDashboard size={20} /> },
+      { name: "Patient Registration", path: "/patients", icon: <Users size={20} /> },
+      { name: "Appointments Queue", path: "/appointments", icon: <Calendar size={20} /> },
+      { name: "Vital Signs Log", path: "/medical-records", icon: <Activity size={20} /> },
+      { name: "Pharmacy Orders", path: "/pharmacy", icon: <Pill size={20} /> },
+    ],
+    staff: [
+      { name: "Staff Dashboard", path: "/", icon: <LayoutDashboard size={20} /> },
+      { name: "Patient Registration", path: "/patients", icon: <Users size={20} /> },
+      { name: "Appointments Queue", path: "/appointments", icon: <Calendar size={20} /> },
+      { name: "Vital Signs Log", path: "/medical-records", icon: <Activity size={20} /> },
+      { name: "Pharmacy Orders", path: "/pharmacy", icon: <Pill size={20} /> },
+    ],
+    patient: [
+      { name: "Patient Portal", path: "/", icon: <LayoutDashboard size={20} /> },
+      { name: "Book Appointment", path: "/appointments", icon: <Calendar size={20} /> },
+      { name: "Health Records", path: "/medical-records", icon: <Activity size={20} /> },
+      { name: "My Prescriptions", path: "/prescriptions", icon: <FileText size={20} /> },
+      { name: "Invoices & Billing", path: "/billing", icon: <DollarSign size={20} /> },
+    ],
+  };
+
+  const navItems = navByRole[role] || navByRole.patient;
 
   return (
     <>
@@ -92,6 +125,19 @@ export default function Sidebar() {
           transition: transform 0.3s ease;
         }
 
+        .role-pill {
+          display: inline-block;
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          background-color: #0284c7;
+          color: #ffffff;
+          padding: 2px 8px;
+          border-radius: 4px;
+          margin-top: 4px;
+          font-weight: 700;
+          letter-spacing: 0.5px;
+        }
+
         .sidebar-backdrop {
           display: none;
         }
@@ -134,10 +180,10 @@ export default function Sidebar() {
 
       {/* Sidebar Drawer */}
       <aside className={`sidebar-root ${mobileOpen ? "is-mobile-open" : ""}`}>
-        {/* App Branding */}
+        {/* App Branding & Role Badge */}
         <div style={styles.brandContainer}>
           <h2 style={styles.brandTitle}>MedCore HMS</h2>
-          <span style={styles.brandSubtitle}>Hospital Ops System</span>
+          <span className="role-pill">{role} portal</span>
         </div>
 
         {/* Navigation Links */}
@@ -161,8 +207,8 @@ export default function Sidebar() {
         {/* User Info & Logout Button */}
         <div style={styles.userFooter}>
           <div style={styles.userInfo}>
-            <span style={styles.userName}>{user?.name || "Admin Staff"}</span>
-            <span style={styles.userEmail}>{user?.email || "anil@gmail.com"}</span>
+            <span style={styles.userName}>{user?.name || user?.full_name || "Authorized User"}</span>
+            <span style={styles.userEmail}>{user?.email || "user@medcore.com"}</span>
           </div>
           <button onClick={handleLogout} style={styles.logoutButton}>
             <LogOut size={16} /> Logout
@@ -186,10 +232,6 @@ const styles = {
     fontSize: "1.25rem",
     fontWeight: "bold",
     color: "#38bdf8",
-  },
-  brandSubtitle: {
-    fontSize: "0.75rem",
-    color: "#94a3b8",
   },
   navContainer: {
     flex: 1,

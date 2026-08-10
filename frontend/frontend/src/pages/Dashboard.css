@@ -4,6 +4,7 @@
   min-height: 100vh;
   background-color: #f8fafc;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  position: relative;
 }
 
 /* Mobile Header (Hidden on Desktop) */
@@ -17,6 +18,12 @@
   position: sticky;
   top: 0;
   z-index: 100;
+}
+
+.mobile-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .mobile-brand h2 {
@@ -53,6 +60,7 @@
   padding: 24px;
   box-sizing: border-box;
   flex-shrink: 0;
+  transition: transform 0.3s ease;
 }
 
 .sidebar-brand h2 {
@@ -100,6 +108,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  text-align: center;
 }
 
 .logout-btn:hover {
@@ -161,33 +170,37 @@
 .card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
+  border-radius: 10px;
   padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
   border-color: #38bdf8;
 }
 
 .card h3 {
   margin: 0 0 8px 0;
-  font-size: 1.1rem;
-  color: #0f172a;
+  color: #1e293b;
+  font-size: 1.15rem;
 }
 
 .card p {
   margin: 0;
-  font-size: 0.9rem;
   color: #64748b;
+  font-size: 0.9rem;
   line-height: 1.4;
 }
 
-/* --- Mobile Responsiveness Breakpoints --- */
+/* Mobile Responsiveness Overrides */
+.sidebar-overlay {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .dashboard-layout {
     flex-direction: column;
@@ -197,28 +210,24 @@
     display: flex;
   }
 
-  /* Slide-out Drawer Sidebar for Mobile */
   .sidebar {
     position: fixed;
     top: 0;
-    left: -280px;
+    left: 0;
     bottom: 0;
-    width: 260px;
     z-index: 200;
-    transition: left 0.3s ease;
-    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.3);
+    transform: translateX(-100%);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
   }
 
   .sidebar.mobile-open {
-    left: 0;
+    transform: translateX(0);
   }
 
   .sidebar-overlay {
+    display: block;
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    inset: 0;
     background-color: rgba(15, 23, 42, 0.6);
     z-index: 150;
     backdrop-filter: blur(2px);
@@ -235,10 +244,5 @@
 
   .primary-btn {
     width: 100%;
-    text-align: center;
-  }
-
-  .dashboard-cards {
-    grid-template-columns: 1fr;
   }
 }

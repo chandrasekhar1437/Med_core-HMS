@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-
 import Sidebar from "./components/Sidebar";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import Patients from "./pages/Patients";
 import Doctors from "./pages/Doctors";
 import Appointments from "./pages/Appointments";
@@ -19,7 +19,11 @@ function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <div style={{ textAlign: "center", padding: "50px", fontSize: "18px" }}>Loading session...</div>;
+    return (
+      <div style={{ textAlign: "center", padding: "50px", fontSize: "18px", color: "#64748b" }}>
+        Loading session...
+      </div>
+    );
   }
 
   return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
@@ -29,26 +33,51 @@ function PublicOnlyRoute() {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <div style={{ textAlign: "center", padding: "50px", fontSize: "18px" }}>Loading session...</div>;
+    return (
+      <div style={{ textAlign: "center", padding: "50px", fontSize: "18px", color: "#64748b" }}>
+        Loading session...
+      </div>
+    );
   }
 
   return !isAuthenticated ? <Outlet /> : <Navigate to="/" replace />;
 }
 
-// Layout with Fixed Left Sidebar
+// Mobile-Responsive App Shell Layout
 function MainLayout() {
   return (
-    <div style={{ display: "flex" }}>
+    <div className="app-shell-root">
+      <style>{`
+        .app-shell-root {
+          display: flex;
+          min-height: 100vh;
+          background-color: #f8fafc;
+        }
+
+        .app-main-content {
+          margin-left: 250px;
+          width: calc(100% - 250px);
+          min-height: 100vh;
+          box-sizing: border-box;
+          transition: margin-left 0.3s ease, width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+          .app-shell-root {
+            flex-direction: column;
+          }
+
+          .app-main-content {
+            margin-left: 0 !important;
+            width: 100% !important;
+            padding-top: 60px; /* Leave room for fixed mobile top header */
+          }
+        }
+      `}</style>
+
       <Sidebar />
-      <main
-        style={{
-          marginLeft: "250px",
-          width: "calc(100% - 250px)",
-          minHeight: "100vh",
-          backgroundColor: "#f8fafc",
-          boxSizing: "border-box",
-        }}
-      >
+
+      <main className="app-main-content">
         <Outlet />
       </main>
     </div>
@@ -60,14 +89,16 @@ export default function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          {/* Public Authentication Routes */}
           <Route element={<PublicOnlyRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
           </Route>
 
+          {/* Protected Application Routes */}
           <Route element={<ProtectedRoute />}>
             <Route element={<MainLayout />}>
-              <Route path="/" element={<Home />} />
+              <Route path="/" element={<Dashboard />} />
               <Route path="/patients" element={<Patients />} />
               <Route path="/doctors" element={<Doctors />} />
               <Route path="/appointments" element={<Appointments />} />
@@ -80,6 +111,7 @@ export default function App() {
             </Route>
           </Route>
 
+          {/* Fallback Catch-All Route */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
