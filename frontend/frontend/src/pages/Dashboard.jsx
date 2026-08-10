@@ -6,7 +6,8 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const role = (user?.role || "admin").toLowerCase();
+  // Normalize user role string
+  const role = (user?.role || "Patient").toLowerCase();
 
   return (
     <div className="dashboard-layout">
@@ -15,7 +16,7 @@ export default function Dashboard() {
         <div className="sidebar-brand">
           <h2>MedCore HMS</h2>
           <span style={{ textTransform: "capitalize" }}>
-            {user?.role || "Admin"} Portal
+            {user?.role || "Patient"} Portal
           </span>
         </div>
         <nav className="sidebar-nav">
@@ -41,12 +42,12 @@ export default function Dashboard() {
             </>
           )}
 
-          {/* ADMIN / STAFF LINKS */}
+          {/* ADMINISTRATIVE STAFF LINKS */}
           {(role === "admin" || role === "staff") && (
             <>
-              <Link to="/patients">Patient Registration</Link>
-              <Link to="/appointments">Appointment Scheduling</Link>
               <Link to="/billing">Billing & Financials</Link>
+              <Link to="/appointments">Appointment Scheduling</Link>
+              <Link to="/patients">Patient Registration</Link>
               <Link to="/doctors">Doctors</Link>
               <Link to="/pharmacy">Pharmacy</Link>
               <Link to="/laboratory">Laboratory</Link>
@@ -68,7 +69,7 @@ export default function Dashboard() {
         </nav>
       </aside>
 
-      {/* Main Content Area */}
+      {/* Main Dynamic Content Area */}
       <main className="main-content">
         <header className="content-header">
           <div>
@@ -76,7 +77,7 @@ export default function Dashboard() {
             <p>Welcome back, {user?.name || user?.email || "User"}!</p>
           </div>
 
-          {/* Primary Quick Action Button */}
+          {/* Action button tailored to active role */}
           <button
             className="primary-btn"
             onClick={() => {
@@ -93,7 +94,7 @@ export default function Dashboard() {
           </button>
         </header>
 
-        {/* Dynamic Role-Based Landing Cards */}
+        {/* Dynamic Card Grid */}
         <div
           className="dashboard-cards"
           style={{
@@ -103,7 +104,7 @@ export default function Dashboard() {
             marginTop: "20px",
           }}
         >
-          {/* 1. PATIENT DASHBOARD FOCUS */}
+          {/* 1. PATIENT FOCUS */}
           {role === "patient" && (
             <>
               <div
@@ -133,7 +134,7 @@ export default function Dashboard() {
             </>
           )}
 
-          {/* 2. DOCTOR DASHBOARD FOCUS */}
+          {/* 2. DOCTOR FOCUS */}
           {role === "doctor" && (
             <>
               <div
@@ -141,7 +142,7 @@ export default function Dashboard() {
                 onClick={() => navigate("/appointments")}
                 style={{ cursor: "pointer" }}
               >
-                <h3>Daily Schedule</h3>
+                <h3>Schedule</h3>
                 <p>View upcoming patient visits, time slots, and consultation reasons.</p>
               </div>
               <div
@@ -163,7 +164,7 @@ export default function Dashboard() {
             </>
           )}
 
-          {/* 3. ADMINISTRATIVE STAFF DASHBOARD FOCUS */}
+          {/* 3. ADMINISTRATIVE STAFF FOCUS */}
           {(role === "admin" || role === "staff") && (
             <>
               <div
@@ -171,7 +172,7 @@ export default function Dashboard() {
                 onClick={() => navigate("/billing")}
                 style={{ cursor: "pointer" }}
               >
-                <h3>Billing Management</h3>
+                <h3>Billing</h3>
                 <p>Process patient payments, insurance claims, and pending invoices.</p>
               </div>
               <div
@@ -193,7 +194,7 @@ export default function Dashboard() {
             </>
           )}
 
-          {/* 4. NURSE DASHBOARD FOCUS */}
+          {/* 4. NURSE FOCUS */}
           {role === "nurse" && (
             <>
               <div
