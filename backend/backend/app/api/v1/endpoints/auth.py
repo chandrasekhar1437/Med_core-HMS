@@ -18,25 +18,25 @@ from app.schemas.user import (
     UserUpdate,
 )
 
-# 1. Initialize router and OAuth2 bearer scheme
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/swagger-login")
 
 
 def normalize_role(role: Optional[str]) -> str:
-    """Normalizes role variations for accurate comparison."""
+    """Normalizes role variations across Admin, Patient, Doctor, and Staff."""
     if not role:
         return "patient"
     r = str(role).strip().lower()
     if r in ["admin", "administrator"]:
-        return "administrator"
+        return "admin"
     if r in ["staff", "nurse", "medical staff", "medical staff / nurse"]:
-        return "medical staff / nurse"
-    return r
+        return "staff"
+    if r in ["doctor", "physician"]:
+        return "doctor"
+    return "patient"
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
-    """Dependency to retrieve and validate the authenticated user from JWT token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate authentication credentials",
@@ -68,7 +68,6 @@ async def register(payload: UserRegister):
     try:
         email = str(payload.email).lower().strip()
 
-        # Check for existing user
         existing = await db.users.find_one({"email": email})
         if existing:
             raise HTTPException(
@@ -118,7 +117,7 @@ async def register(payload: UserRegister):
         )
 
 
-# 2. LOGIN FOR FRONTEND (Accepts raw JSON body without 422 errors)
+# 2. FRONTEND JSON LOGIN
 @router.post("/login")
 @router.post("/login/")
 async def login(request: Request):
@@ -140,18 +139,17 @@ async def login(request: Request):
         if not user or not verify_password(password, user.get("password_hash", "")):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password",
+                detail="Invalid email or password. Please check your credentials.",
             )
 
         user_id = str(user["_id"])
         db_role = user.get("role") or "Patient"
 
-        if req_role:
-            if normalize_role(req_role) != normalize_role(db_role):
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Account registered as '{db_role}'. Please change your selected role.",
-                )
+        if req_role and normalize_role(req_role) != normalize_role(db_role):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Account is registered as '{db_role}'. Please switch to that role.",
+            )
 
         access_token = create_access_token(
             data={"sub": user_id, "email": user["email"], "role": db_role}
@@ -164,7 +162,7 @@ async def login(request: Request):
             "token_type": "bearer",
             "user": {
                 "id": user_id,
-                "email": user["email"],
+                "email": email,
                 "name": user_name,
                 "full_name": user_name,
                 "role": db_role,
@@ -182,7 +180,7 @@ async def login(request: Request):
         )
 
 
-# 3. LOGIN FOR SWAGGER UI AUTHORIZE MODAL (Handles form-data)
+# 3. SWAGGER FORM LOGIN
 @router.post("/swagger-login", include_in_schema=False)
 async def swagger_login(form_data: OAuth2PasswordRequestForm = Depends()):
     email = str(form_data.username).lower().strip()
@@ -209,7 +207,7 @@ async def swagger_login(form_data: OAuth2PasswordRequestForm = Depends()):
         "token_type": "bearer",
         "user": {
             "id": user_id,
-            "email": user["email"],
+            "email": email,
             "name": user_name,
             "full_name": user_name,
             "role": db_role,
@@ -217,7 +215,7 @@ async def swagger_login(form_data: OAuth2PasswordRequestForm = Depends()):
     }
 
 
-# 4. GET PROFILE
+# 4. PROFILE ROUTE
 @router.get("/me")
 async def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
     return current_user
