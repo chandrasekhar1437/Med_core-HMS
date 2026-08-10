@@ -1,73 +1,110 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import "./Dashboard.css";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Normalize user role string
   const role = (user?.role || "Patient").toLowerCase();
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
     <div className="dashboard-layout">
+      {/* Mobile Top Header */}
+      <header className="mobile-header">
+        <div className="mobile-brand">
+          <h2>MedCore HMS</h2>
+          <span className="role-badge">{user?.role || "Patient"}</span>
+        </div>
+        <button
+          className="hamburger-btn"
+          onClick={toggleMobileMenu}
+          aria-label="Toggle navigation menu"
+        >
+          {mobileMenuOpen ? "✕" : "☰"}
+        </button>
+      </header>
+
       {/* Sidebar Navigation */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${mobileMenuOpen ? "mobile-open" : ""}`}>
         <div className="sidebar-brand">
           <h2>MedCore HMS</h2>
-          <span style={{ textTransform: "capitalize" }}>
+          <span className="role-subtitle">
             {user?.role || "Patient"} Portal
           </span>
         </div>
+
         <nav className="sidebar-nav">
-          <Link to="/" className="active">
+          <Link to="/" className="active" onClick={closeMobileMenu}>
             Dashboard
           </Link>
 
           {/* PATIENT LINKS */}
           {role === "patient" && (
             <>
-              <Link to="/medical-records">Health Records</Link>
-              <Link to="/appointments">My Appointments</Link>
-              <Link to="/prescriptions">My Prescriptions</Link>
+              <Link to="/medical-records" onClick={closeMobileMenu}>Health Records</Link>
+              <Link to="/appointments" onClick={closeMobileMenu}>My Appointments</Link>
+              <Link to="/prescriptions" onClick={closeMobileMenu}>My Prescriptions</Link>
             </>
           )}
 
           {/* DOCTOR LINKS */}
           {role === "doctor" && (
             <>
-              <Link to="/appointments">My Schedule</Link>
-              <Link to="/patients">Patient List</Link>
-              <Link to="/prescriptions">Treatment Notes</Link>
+              <Link to="/appointments" onClick={closeMobileMenu}>My Schedule</Link>
+              <Link to="/patients" onClick={closeMobileMenu}>Patient List</Link>
+              <Link to="/prescriptions" onClick={closeMobileMenu}>Treatment Notes</Link>
             </>
           )}
 
           {/* ADMINISTRATIVE STAFF LINKS */}
           {(role === "admin" || role === "staff") && (
             <>
-              <Link to="/billing">Billing & Financials</Link>
-              <Link to="/appointments">Appointment Scheduling</Link>
-              <Link to="/patients">Patient Registration</Link>
-              <Link to="/doctors">Doctors</Link>
-              <Link to="/pharmacy">Pharmacy</Link>
-              <Link to="/laboratory">Laboratory</Link>
+              <Link to="/billing" onClick={closeMobileMenu}>Billing & Financials</Link>
+              <Link to="/appointments" onClick={closeMobileMenu}>Appointment Scheduling</Link>
+              <Link to="/patients" onClick={closeMobileMenu}>Patient Registration</Link>
+              <Link to="/doctors" onClick={closeMobileMenu}>Doctors</Link>
+              <Link to="/pharmacy" onClick={closeMobileMenu}>Pharmacy</Link>
+              <Link to="/laboratory" onClick={closeMobileMenu}>Laboratory</Link>
             </>
           )}
 
           {/* NURSE LINKS */}
           {role === "nurse" && (
             <>
-              <Link to="/patients">Assigned Tasks</Link>
-              <Link to="/medical-records">Vital Signs Tracking</Link>
-              <Link to="/pharmacy">Medication Schedules</Link>
+              <Link to="/patients" onClick={closeMobileMenu}>Assigned Tasks</Link>
+              <Link to="/medical-records" onClick={closeMobileMenu}>Vital Signs Tracking</Link>
+              <Link to="/pharmacy" onClick={closeMobileMenu}>Medication Schedules</Link>
             </>
           )}
 
-          <button onClick={logout} className="logout-btn">
+          <button
+            onClick={() => {
+              closeMobileMenu();
+              logout();
+            }}
+            className="logout-btn"
+          >
             Sign Out
           </button>
         </nav>
       </aside>
+
+      {/* Mobile Overlay Background */}
+      {mobileMenuOpen && (
+        <div className="sidebar-overlay" onClick={closeMobileMenu}></div>
+      )}
 
       {/* Main Dynamic Content Area */}
       <main className="main-content">
@@ -95,22 +132,13 @@ export default function Dashboard() {
         </header>
 
         {/* Dynamic Card Grid */}
-        <div
-          className="dashboard-cards"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-            gap: "20px",
-            marginTop: "20px",
-          }}
-        >
+        <div className="dashboard-cards">
           {/* 1. PATIENT FOCUS */}
           {role === "patient" && (
             <>
               <div
                 className="card"
                 onClick={() => navigate("/medical-records")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Health Records</h3>
                 <p>Access your medical diagnosis files, lab reports, and clinical history.</p>
@@ -118,7 +146,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/appointments")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Appointments</h3>
                 <p>Schedule new consultations and track upcoming clinic visits.</p>
@@ -126,7 +153,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/prescriptions")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Prescriptions</h3>
                 <p>View active medications, dosage instructions, and refill logs.</p>
@@ -140,7 +166,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/appointments")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Schedule</h3>
                 <p>View upcoming patient visits, time slots, and consultation reasons.</p>
@@ -148,7 +173,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/patients")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Patient List</h3>
                 <p>Browse assigned patient medical histories and active profiles.</p>
@@ -156,7 +180,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/prescriptions")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Treatment Notes</h3>
                 <p>Record clinical progress notes and write electronic prescriptions.</p>
@@ -170,7 +193,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/billing")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Billing</h3>
                 <p>Process patient payments, insurance claims, and pending invoices.</p>
@@ -178,7 +200,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/appointments")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Appointment Scheduling</h3>
                 <p>Manage clinic time slots, assign doctors, and track bookings.</p>
@@ -186,7 +207,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/patients")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Patient Registration</h3>
                 <p>Register new patient profiles and update personal intake records.</p>
@@ -200,7 +220,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/patients")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Assigned Tasks</h3>
                 <p>Track daily ward duties, care plans, and patient requests.</p>
@@ -208,7 +227,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/medical-records")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Vital Signs Tracking</h3>
                 <p>Record blood pressure, pulse, temperature, and oxygen levels.</p>
@@ -216,7 +234,6 @@ export default function Dashboard() {
               <div
                 className="card"
                 onClick={() => navigate("/pharmacy")}
-                style={{ cursor: "pointer" }}
               >
                 <h3>Medication Schedules</h3>
                 <p>Monitor medicine dosage timetables and log administered meds.</p>

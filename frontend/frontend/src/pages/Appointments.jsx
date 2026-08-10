@@ -99,6 +99,7 @@ export default function Appointments() {
       status: appointment.status || "Scheduled",
       reason: appointment.reason || "",
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancelEdit = () => {
@@ -236,60 +237,99 @@ export default function Appointments() {
         </form>
       </div>
 
-      {/* Table List */}
+      {/* Appointment Display Section */}
       <h3>Existing Appointments</h3>
-      <div className="table-container">
-        {loading ? (
-          <div className="no-data">Loading appointments...</div>
-        ) : appointments.length === 0 ? (
-          <div className="no-data">No appointments booked yet.</div>
-        ) : (
-          <table className="appointments-table">
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Doctor</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Status</th>
-                <th>Reason</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {appointments.map((app) => {
-                const appId = app.id || app._id;
-                return (
-                  <tr key={appId}>
-                    <td>
-                      <strong>{app.patient_name}</strong>
-                    </td>
-                    <td>{app.doctor_name}</td>
-                    <td>{app.appointment_date}</td>
-                    <td>{app.appointment_time}</td>
-                    <td>{getStatusBadge(app.status)}</td>
-                    <td>{app.reason || "-"}</td>
-                    <td>
-                      <button
-                        className="btn btn-edit"
-                        onClick={() => handleEditClick(app)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className="btn btn-delete"
-                        onClick={() => handleDelete(appId)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+
+      {loading ? (
+        <div className="no-data">Loading appointments...</div>
+      ) : appointments.length === 0 ? (
+        <div className="no-data">No appointments booked yet.</div>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="table-container">
+            <table className="appointments-table">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Doctor</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appointments.map((app) => {
+                  const appId = app.id || app._id;
+                  return (
+                    <tr key={appId}>
+                      <td>
+                        <strong>{app.patient_name}</strong>
+                      </td>
+                      <td>{app.doctor_name}</td>
+                      <td>{app.appointment_date}</td>
+                      <td>{app.appointment_time}</td>
+                      <td>{getStatusBadge(app.status)}</td>
+                      <td>{app.reason || "-"}</td>
+                      <td>
+                        <button
+                          className="btn btn-edit"
+                          onClick={() => handleEditClick(app)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-delete"
+                          onClick={() => handleDelete(appId)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-cards-container">
+            {appointments.map((app) => {
+              const appId = app.id || app._id;
+              return (
+                <div key={appId} className="appointment-mobile-card">
+                  <div className="mobile-card-header">
+                    <span className="patient-title">{app.patient_name}</span>
+                    {getStatusBadge(app.status)}
+                  </div>
+                  <div className="mobile-card-body">
+                    <p><strong>Doctor:</strong> {app.doctor_name}</p>
+                    <p><strong>Date:</strong> {app.appointment_date}</p>
+                    <p><strong>Time:</strong> {app.appointment_time}</p>
+                    <p><strong>Reason:</strong> {app.reason || "-"}</p>
+                  </div>
+                  <div className="mobile-card-actions">
+                    <button
+                      className="btn btn-edit"
+                      onClick={() => handleEditClick(app)}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      className="btn btn-delete"
+                      onClick={() => handleDelete(appId)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

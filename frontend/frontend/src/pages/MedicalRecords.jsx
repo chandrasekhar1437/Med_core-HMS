@@ -21,7 +21,7 @@ export default function MedicalRecords() {
     try {
       setLoading(true);
       const response = await API.get("/medical-records/");
-      setRecords(response.data);
+      setRecords(Array.isArray(response.data) ? response.data : []);
       setError(null);
     } catch (err) {
       console.error("Error fetching medical records:", err);
@@ -63,6 +63,7 @@ export default function MedicalRecords() {
       prescription: record.prescription || "",
       notes: record.notes || "",
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancelEdit = () => {
@@ -90,7 +91,105 @@ export default function MedicalRecords() {
   }
 
   return (
-    <div style={styles.container}>
+    <div className="med-records-container" style={styles.container}>
+      <style>{`
+        .med-records-container {
+          padding: 30px;
+          max-width: 950px;
+          margin: 30px auto;
+          background-color: #ffffff;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+          box-sizing: border-box;
+        }
+
+        .med-form-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+
+        /* Mobile Responsive Card List */
+        .mobile-records-list {
+          display: none;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 15px;
+        }
+
+        .mobile-record-card {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 16px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .mobile-card-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+          padding-bottom: 6px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .mobile-patient-id {
+          font-weight: 700;
+          color: #0284c7;
+          font-size: 15px;
+        }
+
+        .mobile-card-body {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 14px;
+          color: #475569;
+          margin-bottom: 12px;
+        }
+
+        .mobile-card-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .mobile-card-actions button {
+          flex: 1;
+          padding: 8px;
+          text-align: center;
+        }
+
+        @media (max-width: 768px) {
+          .med-records-container {
+            padding: 16px;
+            margin: 10px auto;
+          }
+
+          .med-form-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+          }
+
+          .med-btn-group {
+            flex-direction: column;
+          }
+
+          .med-btn-group button {
+            width: 100%;
+          }
+
+          .desktop-table-wrapper {
+            display: none;
+          }
+
+          .mobile-records-list {
+            display: flex;
+          }
+        }
+      `}</style>
+
       <h2 style={styles.headerTitle}>Medical Records Management</h2>
 
       {error && <div style={styles.errorBanner}>{error}</div>}
@@ -100,7 +199,7 @@ export default function MedicalRecords() {
           {editingId ? "Edit Medical Record" : "Add Medical Record"}
         </h3>
 
-        <div style={styles.gridRow}>
+        <div className="med-form-grid">
           <div style={styles.inputGroup}>
             <label style={styles.label}>Patient ID / Name:</label>
             <input
@@ -128,7 +227,7 @@ export default function MedicalRecords() {
           </div>
         </div>
 
-        <div style={styles.gridRow}>
+        <div className="med-form-grid">
           <div style={styles.inputGroup}>
             <label style={styles.label}>Prescription:</label>
             <input
@@ -154,7 +253,7 @@ export default function MedicalRecords() {
           </div>
         </div>
 
-        <div style={styles.buttonGroup}>
+        <div className="med-btn-group" style={styles.buttonGroup}>
           <button type="submit" style={styles.primaryButton}>
             {editingId ? "Update Record" : "Add Record"}
           </button>
@@ -171,54 +270,99 @@ export default function MedicalRecords() {
       </form>
 
       <h3 style={styles.subHeader}>Existing Clinical Records</h3>
+
       {records.length === 0 ? (
         <p style={styles.noData}>No medical records found.</p>
       ) : (
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.tableHeaderRow}>
-                <th style={styles.th}>Patient ID</th>
-                <th style={styles.th}>Diagnosis</th>
-                <th style={styles.th}>Prescription</th>
-                <th style={styles.th}>Notes</th>
-                <th style={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((record, index) => {
-                const recordId = record.id || record._id;
-                return (
-                  <tr
-                    key={recordId}
-                    style={index % 2 === 0 ? styles.trEven : styles.trOdd}
-                  >
-                    <td style={styles.td}>
-                      <strong>{record.patient_id}</strong>
-                    </td>
-                    <td style={styles.td}>{record.diagnosis}</td>
-                    <td style={styles.td}>{record.prescription || "—"}</td>
-                    <td style={styles.td}>{record.notes || "—"}</td>
-                    <td style={styles.td}>
-                      <button
-                        onClick={() => handleEditClick(record)}
-                        style={styles.editButton}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(recordId)}
-                        style={styles.deleteButton}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Desktop Table View */}
+          <div className="desktop-table-wrapper" style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr style={styles.tableHeaderRow}>
+                  <th style={styles.th}>Patient ID</th>
+                  <th style={styles.th}>Diagnosis</th>
+                  <th style={styles.th}>Prescription</th>
+                  <th style={styles.th}>Notes</th>
+                  <th style={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((record, index) => {
+                  const recordId = record.id || record._id;
+                  return (
+                    <tr
+                      key={recordId}
+                      style={index % 2 === 0 ? styles.trEven : styles.trOdd}
+                    >
+                      <td style={styles.td}>
+                        <strong>{record.patient_id}</strong>
+                      </td>
+                      <td style={styles.td}>{record.diagnosis}</td>
+                      <td style={styles.td}>{record.prescription || "—"}</td>
+                      <td style={styles.td}>{record.notes || "—"}</td>
+                      <td style={styles.td}>
+                        <button
+                          onClick={() => handleEditClick(record)}
+                          style={styles.editButton}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(recordId)}
+                          style={styles.deleteButton}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Card View */}
+          <div className="mobile-records-list">
+            {records.map((record) => {
+              const recordId = record.id || record._id;
+              return (
+                <div key={recordId} className="mobile-record-card">
+                  <div className="mobile-card-header">
+                    <span className="mobile-patient-id">
+                      {record.patient_id}
+                    </span>
+                  </div>
+                  <div className="mobile-card-body">
+                    <div>
+                      <strong>Diagnosis:</strong> {record.diagnosis}
+                    </div>
+                    <div>
+                      <strong>Prescription:</strong> {record.prescription || "—"}
+                    </div>
+                    <div>
+                      <strong>Notes:</strong> {record.notes || "—"}
+                    </div>
+                  </div>
+                  <div className="mobile-card-actions">
+                    <button
+                      onClick={() => handleEditClick(record)}
+                      style={styles.editButton}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(recordId)}
+                      style={styles.deleteButton}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
@@ -272,11 +416,6 @@ const styles = {
     color: "#495057",
     fontSize: "18px",
   },
-  gridRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "15px",
-  },
   inputGroup: {
     marginBottom: "15px",
   },
@@ -294,6 +433,7 @@ const styles = {
     border: "1px solid #ced4da",
     fontSize: "14px",
     boxSizing: "border-box",
+    backgroundColor: "#ffffff",
   },
   buttonGroup: {
     display: "flex",
@@ -308,6 +448,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "14px",
   },
   secondaryButton: {
     padding: "10px 18px",
@@ -317,6 +458,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "14px",
   },
   tableWrapper: {
     overflowX: "auto",
@@ -354,6 +496,7 @@ const styles = {
     cursor: "pointer",
     marginRight: "6px",
     fontWeight: "600",
+    fontSize: "13px",
   },
   deleteButton: {
     padding: "6px 12px",
@@ -363,6 +506,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "13px",
   },
   noData: {
     color: "#6c757d",

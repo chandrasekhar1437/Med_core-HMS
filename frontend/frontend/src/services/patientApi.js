@@ -4,8 +4,16 @@ import API from "./api";
  * Fetch all patients from the database
  */
 export const getPatients = async () => {
-  const response = await API.get("/patients/");
-  return response.data;
+  try {
+    const response = await API.get("/patients/");
+    return response.data;
+  } catch (err) {
+    if (err.response && (err.response.status === 404 || err.response.status === 307)) {
+      const fallback = await API.get("/patients");
+      return fallback.data;
+    }
+    throw err;
+  }
 };
 
 /**
@@ -13,8 +21,16 @@ export const getPatients = async () => {
  * @param {Object} patientData - Patient details payload
  */
 export const createPatient = async (patientData) => {
-  const response = await API.post("/patients/", patientData);
-  return response.data;
+  try {
+    const response = await API.post("/patients/", patientData);
+    return response.data;
+  } catch (err) {
+    if (err.response && (err.response.status === 404 || err.response.status === 307)) {
+      const fallback = await API.post("/patients", patientData);
+      return fallback.data;
+    }
+    throw err;
+  }
 };
 
 /**
@@ -23,8 +39,16 @@ export const createPatient = async (patientData) => {
  * @param {Object} patientData - Updated fields
  */
 export const updatePatient = async (patientId, patientData) => {
-  const response = await API.put(`/patients/${patientId}`, patientData);
-  return response.data;
+  try {
+    const response = await API.put(`/patients/${patientId}`, patientData);
+    return response.data;
+  } catch (err) {
+    if (err.response && (err.response.status === 405 || err.response.status === 404)) {
+      const fallback = await API.patch(`/patients/${patientId}`, patientData);
+      return fallback.data;
+    }
+    throw err;
+  }
 };
 
 /**
@@ -32,11 +56,18 @@ export const updatePatient = async (patientId, patientData) => {
  * @param {string|number} patientId - ID of the patient to remove
  */
 export const deletePatient = async (patientId) => {
-  const response = await API.delete(`/patients/${patientId}`);
-  return response.data;
+  try {
+    const response = await API.delete(`/patients/${patientId}`);
+    return response.data;
+  } catch (err) {
+    if (err.response && err.response.status === 404) {
+      const fallback = await API.delete(`/patients/${patientId}/`);
+      return fallback.data;
+    }
+    throw err;
+  }
 };
 
-// Default export object for backwards compatibility
 const patientApi = {
   getPatients,
   createPatient,

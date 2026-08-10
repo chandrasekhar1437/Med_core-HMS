@@ -25,7 +25,7 @@ export default function Patients() {
     try {
       setLoading(true);
       const data = await getPatients();
-      setPatients(data);
+      setPatients(Array.isArray(data) ? data : []);
       setError("");
     } catch (err) {
       console.error("Error fetching patients:", err);
@@ -75,6 +75,7 @@ export default function Patients() {
       gender: item.gender || "",
       condition: item.condition || "",
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Handle patient deletion securely using id or _id fallback
@@ -102,7 +103,114 @@ export default function Patients() {
     return <div style={styles.loading}>Loading patients...</div>;
 
   return (
-    <div style={styles.container}>
+    <div className="patients-container" style={styles.container}>
+      <style>{`
+        .patients-container {
+          padding: 30px;
+          max-width: 950px;
+          margin: 30px auto;
+          background-color: #ffffff;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+          box-sizing: border-box;
+        }
+
+        .patient-form-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 15px;
+        }
+
+        /* Mobile Card View */
+        .mobile-patients-list {
+          display: none;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 15px;
+        }
+
+        .patient-card-mobile {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 16px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .mobile-patient-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+          padding-bottom: 6px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .mobile-patient-name {
+          font-weight: 700;
+          color: #0f172a;
+          font-size: 16px;
+        }
+
+        .gender-badge {
+          font-size: 12px;
+          font-weight: 600;
+          padding: 2px 8px;
+          border-radius: 12px;
+          background-color: #e0f2fe;
+          color: #0369a1;
+        }
+
+        .mobile-patient-body {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 14px;
+          color: #475569;
+          margin-bottom: 12px;
+        }
+
+        .mobile-card-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .mobile-card-actions button {
+          flex: 1;
+          padding: 8px;
+          text-align: center;
+        }
+
+        @media (max-width: 768px) {
+          .patients-container {
+            padding: 16px;
+            margin: 10px auto;
+          }
+
+          .patient-form-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+          }
+
+          .patient-btn-group {
+            flex-direction: column;
+          }
+
+          .patient-btn-group button {
+            width: 100%;
+          }
+
+          .desktop-table-wrapper {
+            display: none;
+          }
+
+          .mobile-patients-list {
+            display: flex;
+          }
+        }
+      `}</style>
+
       <h2 style={styles.headerTitle}>Patients Management</h2>
 
       {error && <div style={styles.errorBanner}>{error}</div>}
@@ -112,55 +220,62 @@ export default function Patients() {
           {editingId ? "Edit Patient" : "Add New Patient"}
         </h3>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Full Name:</label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-            style={styles.input}
-          />
+        <div className="patient-form-grid">
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Full Name:</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+              style={styles.input}
+              placeholder="e.g. John Doe"
+            />
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Age:</label>
+            <input
+              type="number"
+              value={form.age}
+              onChange={(e) => setForm({ ...form, age: e.target.value })}
+              required
+              style={styles.input}
+              placeholder="e.g. 32"
+            />
+          </div>
         </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Age:</label>
-          <input
-            type="number"
-            value={form.age}
-            onChange={(e) => setForm({ ...form, age: e.target.value })}
-            required
-            style={styles.input}
-          />
+        <div className="patient-form-grid">
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Gender:</label>
+            <select
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              required
+              style={styles.input}
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Condition:</label>
+            <input
+              type="text"
+              value={form.condition}
+              onChange={(e) => setForm({ ...form, condition: e.target.value })}
+              required
+              style={styles.input}
+              placeholder="e.g. Hypertension"
+            />
+          </div>
         </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Gender:</label>
-          <select
-            value={form.gender}
-            onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            required
-            style={styles.input}
-          >
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Condition:</label>
-          <input
-            type="text"
-            value={form.condition}
-            onChange={(e) => setForm({ ...form, condition: e.target.value })}
-            required
-            style={styles.input}
-          />
-        </div>
-
-        <div style={styles.buttonGroup}>
+        <div className="patient-btn-group" style={styles.buttonGroup}>
           <button type="submit" style={styles.primaryButton}>
             {editingId ? "Update Patient" : "Save Patient"}
           </button>
@@ -183,46 +298,81 @@ export default function Patients() {
       {patients.length === 0 ? (
         <p style={styles.noData}>No patients found.</p>
       ) : (
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.tableHeaderRow}>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Age</th>
-                <th style={styles.th}>Gender</th>
-                <th style={styles.th}>Condition</th>
-                <th style={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {patients.map((item, index) => (
-                <tr
-                  key={item.id || item._id}
-                  style={index % 2 === 0 ? styles.trEven : styles.trOdd}
-                >
-                  <td style={styles.td}>{item.name}</td>
-                  <td style={styles.td}>{item.age}</td>
-                  <td style={styles.td}>{item.gender}</td>
-                  <td style={styles.td}>{item.condition}</td>
-                  <td style={styles.td}>
-                    <button
-                      onClick={() => handleEdit(item)}
-                      style={styles.editButton}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(item)}
-                      style={styles.deleteButton}
-                    >
-                      Delete
-                    </button>
-                  </td>
+        <>
+          {/* Desktop Table View */}
+          <div className="desktop-table-wrapper" style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr style={styles.tableHeaderRow}>
+                  <th style={styles.th}>Name</th>
+                  <th style={styles.th}>Age</th>
+                  <th style={styles.th}>Gender</th>
+                  <th style={styles.th}>Condition</th>
+                  <th style={styles.th}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {patients.map((item, index) => (
+                  <tr
+                    key={item.id || item._id}
+                    style={index % 2 === 0 ? styles.trEven : styles.trOdd}
+                  >
+                    <td style={styles.td}>
+                      <strong>{item.name}</strong>
+                    </td>
+                    <td style={styles.td}>{item.age}</td>
+                    <td style={styles.td}>{item.gender}</td>
+                    <td style={styles.td}>{item.condition}</td>
+                    <td style={styles.td}>
+                      <button
+                        onClick={() => handleEdit(item)}
+                        style={styles.editButton}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item)}
+                        style={styles.deleteButton}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile View Cards */}
+          <div className="mobile-patients-list">
+            {patients.map((item) => (
+              <div key={item.id || item._id} className="patient-card-mobile">
+                <div className="mobile-patient-header">
+                  <span className="mobile-patient-name">{item.name}</span>
+                  <span className="gender-badge">{item.gender}</span>
+                </div>
+                <div className="mobile-patient-body">
+                  <div><strong>Age:</strong> {item.age}</div>
+                  <div><strong>Condition:</strong> {item.condition}</div>
+                </div>
+                <div className="mobile-card-actions">
+                  <button
+                    onClick={() => handleEdit(item)}
+                    style={styles.editButton}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item)}
+                    style={styles.deleteButton}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
@@ -293,10 +443,12 @@ const styles = {
     border: "1px solid #ced4da",
     fontSize: "14px",
     boxSizing: "border-box",
+    backgroundColor: "#ffffff",
   },
   buttonGroup: {
     display: "flex",
     gap: "10px",
+    marginTop: "10px",
   },
   primaryButton: {
     padding: "10px 18px",
@@ -306,6 +458,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "14px",
   },
   secondaryButton: {
     padding: "10px 18px",
@@ -315,6 +468,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "14px",
   },
   tableWrapper: {
     overflowX: "auto",
@@ -352,6 +506,7 @@ const styles = {
     cursor: "pointer",
     marginRight: "6px",
     fontWeight: "600",
+    fontSize: "13px",
   },
   deleteButton: {
     padding: "6px 12px",
@@ -361,6 +516,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "13px",
   },
   noData: {
     color: "#6c757d",
