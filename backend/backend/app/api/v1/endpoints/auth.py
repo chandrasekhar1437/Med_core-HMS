@@ -14,7 +14,6 @@ from app.core.security import (
 )
 from app.schemas.user import (
     PasswordChange,
-    UserRegister,
     UserUpdate,
 )
 
@@ -61,12 +60,26 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
     return user
 
 
-# 1. REGISTER
+# 1. REGISTER (Supports both JSON payload and flexible field names)
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 @router.post("/register/", status_code=status.HTTP_201_CREATED)
-async def register(payload: UserRegister):
+async def register(request: Request):
     try:
-        email = str(payload.email).lower().strip()
+        body = await request.json()
+        email_raw = body.get("email") or body.get("username") or ""
+        password = body.get("password") or ""
+        raw_name = body.get("full_name") or body.get("name") or "User"
+        req_role = body.get("role") or "Patient"
+
+        email = str(email_raw).lower().strip()
+        user_name = str(raw_name).strip()
+        user_role = str(req_role).strip()
+
+        if not email or not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email and password are required",
+            )
 
         existing = await db.users.find_one({"email": email})
         if existing:
@@ -75,16 +88,12 @@ async def register(payload: UserRegister):
                 detail="User with this email already exists",
             )
 
-        raw_name = payload.full_name or payload.name or "User"
-        user_name = str(raw_name).strip()
-        user_role = str(payload.role or "Patient").strip()
-
         user_doc = {
             "email": email,
             "name": user_name,
             "full_name": user_name,
             "role": user_role,
-            "password_hash": hash_password(payload.password),
+            "password_hash": hash_password(password),
         }
 
         result = await db.users.insert_one(user_doc)

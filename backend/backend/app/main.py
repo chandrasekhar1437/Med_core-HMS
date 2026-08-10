@@ -22,11 +22,11 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS
+# Configure CORS for all origins, headers, and credentials
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -56,11 +56,3 @@ def read_root():
 @app.head("/health")
 def health_check():
     return {"status": "healthy", "service": "Med-core HMS API"}
-
-
-# Print all registered paths on server startup
-print("\n================ REGISTERED ROUTES ================")
-for route in app.routes:
-    if hasattr(route, "path") and hasattr(route, "methods"):
-        print(f"Path: {route.path} | Methods: {route.methods}")
-print("====================================================\n")
