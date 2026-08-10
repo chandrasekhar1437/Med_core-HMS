@@ -118,12 +118,12 @@ async def register(payload: UserRegister):
         )
 
 
-# 2. LOGIN (Hybrid Handler: Supports JSON payloads from React Frontend AND Form Data from Swagger UI)
+# 2. LOGIN (Supports React JSON requests and Swagger Form-Data without Python 3.14 signature errors)
 @router.post("/login")
 @router.post("/login/")
 async def login(
     request: Request,
-    form_data: Optional[OAuth2PasswordRequestForm] = Depends(),
+    form_data: OAuth2PasswordRequestForm = Depends(),
 ):
     try:
         email_raw = ""
@@ -132,14 +132,14 @@ async def login(
 
         content_type = request.headers.get("content-type", "")
 
-        # Handle JSON body sent by React/Vite frontend
+        # Handle JSON payload from React/Vite Frontend
         if "application/json" in content_type:
             body = await request.json()
             email_raw = body.get("email") or body.get("username") or ""
             password = body.get("password") or ""
             req_role = body.get("role")
-        # Handle Form Data sent by Swagger Authorize Modal
-        elif form_data and form_data.username:
+        # Handle Form Data from Swagger UI Authorize Modal
+        else:
             email_raw = form_data.username
             password = form_data.password
 
@@ -161,7 +161,6 @@ async def login(
         user_id = str(user["_id"])
         db_role = user.get("role", "Patient")
 
-        # Validate role if specified by frontend selection
         if req_role and normalize_role(req_role) != normalize_role(db_role):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
