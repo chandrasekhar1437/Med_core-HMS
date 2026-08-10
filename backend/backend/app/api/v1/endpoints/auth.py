@@ -2,7 +2,7 @@ import traceback
 from typing import Any, Dict, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from app.core.database import db
@@ -118,13 +118,38 @@ async def register(payload: UserRegister):
         )
 
 
-# 2. LOGIN (Fully compatible with OpenAPI 3.1 & Swagger Authorize modal)
+# 2. LOGIN (Hybrid Handler: Supports JSON payloads from React Frontend AND Form Data from Swagger UI)
 @router.post("/login")
 @router.post("/login/")
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(
+    request: Request,
+    form_data: Optional[OAuth2PasswordRequestForm] = Depends(),
+):
     try:
-        email = str(form_data.username).lower().strip()
-        password = form_data.password
+        email_raw = ""
+        password = ""
+        req_role = None
+
+        content_type = request.headers.get("content-type", "")
+
+        # Handle JSON body sent by React/Vite frontend
+        if "application/json" in content_type:
+            body = await request.json()
+            email_raw = body.get("email") or body.get("username") or ""
+            password = body.get("password") or ""
+            req_role = body.get("role")
+        # Handle Form Data sent by Swagger Authorize Modal
+        elif form_data and form_data.username:
+            email_raw = form_data.username
+            password = form_data.password
+
+        email = str(email_raw).lower().strip()
+
+        if not email or not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email and password are required",
+            )
 
         user = await db.users.find_one({"email": email})
         if not user or not verify_password(password, user.get("password_hash", "")):
@@ -135,6 +160,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
         user_id = str(user["_id"])
         db_role = user.get("role", "Patient")
+
+        # Validate role if specified by frontend selection
+        if req_role and normalize_role(req_role) != normalize_role(db_role):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"User exists as '{db_role}' but selected '{req_role}'",
+            )
 
         access_token = create_access_token(
             data={"sub": user_id, "email": user["email"], "role": db_role}
