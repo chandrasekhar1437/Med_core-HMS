@@ -1,12 +1,10 @@
 fastapi
 uvicorn
 motor
-pymongo
-python-dotenv
+dnspython
+pydantic[email]
+passlib[bcrypt]
 python-jose[cryptography]
-bcrypt
-pydantic
-pydantic-settings
-email-validator
-sqlalchemy
 python-multipart
+sqlalchemy
+python-dotenv
