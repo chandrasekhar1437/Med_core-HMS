@@ -1,23 +1,11 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import {
+  getAppointments,
+  createAppointment,
+  updateAppointment,
+  deleteAppointment,
+} from "../services/appointmentApi";
 import "./Appointments.css";
-
-// Create a dedicated Axios instance
-const api = axios.create({
-  baseURL: "http://localhost:8000/api/v1/appointments",
-});
-
-// Attach Authorization interceptor to include stored JWT token in every request
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState([]);
@@ -37,15 +25,28 @@ export default function Appointments() {
     fetchAppointments();
   }, []);
 
+  const formatErrorMessage = (serverDetail) => {
+    if (typeof serverDetail === "string") return serverDetail;
+    if (Array.isArray(serverDetail)) {
+      return serverDetail.map((err) => err.msg || err.detail).join(" | ");
+    }
+    return "Failed to communicate with backend server.";
+  };
+
   const fetchAppointments = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/");
-      setAppointments(response.data);
       setError(null);
+      const data = await getAppointments();
+      setAppointments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error fetching appointments:", err);
-      setError("Failed to connect to backend server or fetch appointments.");
+      const serverMsg = err.response?.data?.detail;
+      setError(
+        serverMsg
+          ? formatErrorMessage(serverMsg)
+          : "Failed to connect to backend server or fetch appointments."
+      );
     } finally {
       setLoading(false);
     }
@@ -62,10 +63,10 @@ export default function Appointments() {
     e.preventDefault();
     try {
       if (editingId) {
-        await api.patch(`/${editingId}`, form);
+        await updateAppointment(editingId, form);
         setEditingId(null);
       } else {
-        await api.post("/", form);
+        await createAppointment(form);
       }
       setForm({
         patient_name: "",
@@ -78,7 +79,12 @@ export default function Appointments() {
       fetchAppointments();
     } catch (err) {
       console.error("Error saving appointment:", err);
-      setError("Failed to save appointment. Please check form fields.");
+      const serverMsg = err.response?.data?.detail;
+      setError(
+        serverMsg
+          ? formatErrorMessage(serverMsg)
+          : "Failed to save appointment. Please check form fields."
+      );
     }
   };
 
@@ -110,7 +116,7 @@ export default function Appointments() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this appointment?")) return;
     try {
-      await api.delete(`/${id}`);
+      await deleteAppointment(id);
       fetchAppointments();
     } catch (err) {
       console.error("Error deleting appointment:", err);
