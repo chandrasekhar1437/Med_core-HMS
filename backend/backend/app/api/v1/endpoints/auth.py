@@ -1,21 +1,22 @@
+import traceback
+from typing import Any, Dict, Optional
+
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from typing import Dict, Any, Optional
-from bson import ObjectId
-import traceback
 
 from app.core.database import db
 from app.core.security import (
-    hash_password,
-    verify_password,
     create_access_token,
     decode_access_token,
+    hash_password,
+    verify_password,
 )
 from app.schemas.user import (
-    UserRegister,
-    UserLogin,
-    UserUpdate,
     PasswordChange,
+    UserLogin,
+    UserRegister,
+    UserUpdate,
 )
 
 router = APIRouter()
