@@ -1,72 +1,47 @@
-const BASE_URL = "http://127.0.0.1:8000/api/v1/patients";
+import API from "./api";
 
-// Helper function to attach Authorization headers automatically
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-};
-
-// 1. GET ALL PATIENTS
+/**
+ * Fetch all patients from the database
+ */
 export const getPatients = async () => {
-  const response = await fetch(`${BASE_URL}/`, {
-    method: "GET",
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to fetch patients.");
-  }
-
-  return await response.json();
+  const response = await API.get("/patients/");
+  return response.data;
 };
 
-// 2. CREATE A NEW PATIENT
+/**
+ * Create a new patient record
+ * @param {Object} patientData - Patient details payload
+ */
 export const createPatient = async (patientData) => {
-  const response = await fetch(`${BASE_URL}/`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(patientData),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to create patient.");
-  }
-
-  return await response.json();
+  const response = await API.post("/patients/", patientData);
+  return response.data;
 };
 
-// 3. UPDATE AN EXISTING PATIENT
+/**
+ * Update an existing patient record by ID
+ * @param {string|number} patientId - ID of the patient
+ * @param {Object} patientData - Updated fields
+ */
 export const updatePatient = async (patientId, patientData) => {
-  const response = await fetch(`${BASE_URL}/${patientId}`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(patientData),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to update patient.");
-  }
-
-  return await response.json();
+  const response = await API.put(`/patients/${patientId}`, patientData);
+  return response.data;
 };
 
-// 4. DELETE A PATIENT
+/**
+ * Delete a patient record by ID
+ * @param {string|number} patientId - ID of the patient to remove
+ */
 export const deletePatient = async (patientId) => {
-  const response = await fetch(`${BASE_URL}/${patientId}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to delete patient.");
-  }
-
-  return await response.json();
+  const response = await API.delete(`/patients/${patientId}`);
+  return response.data;
 };
+
+// Default export object for backwards compatibility
+const patientApi = {
+  getPatients,
+  createPatient,
+  updatePatient,
+  deletePatient,
+};
+
+export default patientApi;

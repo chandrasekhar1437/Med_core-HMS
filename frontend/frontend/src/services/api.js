@@ -1,10 +1,13 @@
 ﻿import axios from "axios";
 
+// Live production backend URL on Render
+const PRODUCTION_BACKEND_URL = "https://med-core-hms-backend.onrender.com/api/v1";
+
 // Centralized Axios instance for all backend API endpoints
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL 
-    ? `${import.meta.env.VITE_API_URL}/api/v1` 
-    : "http://localhost:8000/api/v1",
+    ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api/v1` 
+    : PRODUCTION_BACKEND_URL,
   headers: {
     "Content-Type": "application/json",
     "Bypass-Tunnel-Remainder": "true",
@@ -14,7 +17,7 @@ const API = axios.create({
 // Request Interceptor: Automatically attach Bearer token if present
 API.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("token") || localStorage.getItem("access_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,8 +33,10 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Clear token and send user back to login page on unauthorized response
+      // Clear all possible token storage keys and send user back to login page
       localStorage.removeItem("token");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
@@ -39,5 +44,29 @@ API.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ==========================================
+// DOCTOR MANAGEMENT ENDPOINTS
+// ==========================================
+
+export const fetchDoctors = async () => {
+  const response = await API.get("/doctors/");
+  return response.data;
+};
+
+export const createDoctor = async (doctorData) => {
+  const response = await API.post("/doctors/", doctorData);
+  return response.data;
+};
+
+export const updateDoctor = async (doctorId, doctorData) => {
+  const response = await API.put(`/doctors/${doctorId}`, doctorData);
+  return response.data;
+};
+
+export const deleteDoctor = async (doctorId) => {
+  const response = await API.delete(`/doctors/${doctorId}`);
+  return response.data;
+};
 
 export default API;

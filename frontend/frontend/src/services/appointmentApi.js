@@ -1,67 +1,47 @@
-const BASE_URL = "http://127.0.0.1:8000/api/v1/appointments";
+import API from "./api";
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("token");
-  return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
-  };
-};
-
+/**
+ * Fetch all appointments
+ */
 export const getAppointments = async () => {
-  const response = await fetch(`${BASE_URL}/`, {
-    method: "GET",
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to fetch appointments.");
-  }
-
-  return await response.json();
+  const response = await API.get("/appointments/");
+  return response.data;
 };
 
+/**
+ * Create a new appointment
+ * @param {Object} appointmentData
+ */
 export const createAppointment = async (appointmentData) => {
-  const response = await fetch(`${BASE_URL}/`, {
-    method: "POST",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(appointmentData),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to create appointment.");
-  }
-
-  return await response.json();
+  const response = await API.post("/appointments/", appointmentData);
+  return response.data;
 };
 
+/**
+ * Update an existing appointment by ID
+ * @param {string|number} appointmentId
+ * @param {Object} appointmentData
+ */
 export const updateAppointment = async (appointmentId, appointmentData) => {
-  const response = await fetch(`${BASE_URL}/${appointmentId}`, {
-    method: "PUT",
-    headers: getAuthHeaders(),
-    body: JSON.stringify(appointmentData),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to update appointment.");
-  }
-
-  return await response.json();
+  const response = await API.put(`/appointments/${appointmentId}`, appointmentData);
+  return response.data;
 };
 
+/**
+ * Delete an appointment by ID
+ * @param {string|number} appointmentId
+ */
 export const deleteAppointment = async (appointmentId) => {
-  const response = await fetch(`${BASE_URL}/${appointmentId}`, {
-    method: "DELETE",
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.detail || "Failed to delete appointment.");
-  }
-
-  return await response.json();
+  const response = await API.delete(`/appointments/${appointmentId}`);
+  return response.data;
 };
+
+// Default export object for backwards compatibility
+const appointmentApi = {
+  getAppointments,
+  createAppointment,
+  updateAppointment,
+  deleteAppointment,
+};
+
+export default appointmentApi;

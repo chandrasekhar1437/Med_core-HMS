@@ -6,9 +6,12 @@ import API from "./api";
  * @param {string} password
  */
 export const loginUser = async (email, password) => {
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanPassword = password.trim();
+
   const formData = new URLSearchParams();
-  formData.append("username", email); // OAuth2PasswordRequestForm expects 'username'
-  formData.append("password", password);
+  formData.append("username", cleanEmail); // OAuth2PasswordRequestForm expects 'username'
+  formData.append("password", cleanPassword);
 
   const response = await API.post("/auth/login", formData, {
     headers: {
@@ -17,7 +20,9 @@ export const loginUser = async (email, password) => {
   });
 
   if (response.data.access_token) {
+    // Store token under both keys to ensure full component compatibility
     localStorage.setItem("access_token", response.data.access_token);
+    localStorage.setItem("token", response.data.access_token);
     if (response.data.user) {
       localStorage.setItem("user", JSON.stringify(response.data.user));
     }
@@ -30,13 +35,27 @@ export const loginUser = async (email, password) => {
  * Register a new user account
  * @param {Object} userData - Registration payload ({ name, email, password, role })
  */
-export const registerUser = async ({ name, email, password, role = "patient" }) => {
+export const registerUser = async ({ name, email, password, role = "Patient" }) => {
+  const cleanName = name.trim();
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanPassword = password.trim();
+
   const response = await API.post("/auth/register", {
-    name,
-    email,
-    password,
+    name: cleanName,
+    full_name: cleanName, // Compatibility for backends expecting full_name
+    email: cleanEmail,
+    password: cleanPassword,
     role,
   });
+
+  if (response.data.access_token) {
+    localStorage.setItem("access_token", response.data.access_token);
+    localStorage.setItem("token", response.data.access_token);
+    if (response.data.user) {
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+    }
+  }
+
   return response.data;
 };
 
@@ -60,3 +79,13 @@ export const logoutUser = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
 };
+
+// Default export object for backwards compatibility
+const authApi = {
+  loginUser,
+  registerUser,
+  getCurrentUser,
+  logoutUser,
+};
+
+export default authApi;

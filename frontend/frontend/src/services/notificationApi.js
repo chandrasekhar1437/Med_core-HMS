@@ -43,7 +43,6 @@ export const sendAppointmentEmail = async ({
     return response.data;
   } catch (error) {
     console.error("Failed to dispatch automated email notification:", error);
-    // Return error status instead of crashing caller workflow
     return { success: false, error };
   }
 };
@@ -63,3 +62,40 @@ export const sendBulkAppointmentEmails = async (notificationsList) => {
     return { success: false, error };
   }
 };
+
+/**
+ * Fetch all notifications for the current user
+ */
+export const fetchNotifications = async () => {
+  try {
+    const response = await API.get("/notifications/");
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch notifications:", error);
+    return [];
+  }
+};
+
+/**
+ * Mark a specific notification as read
+ * @param {string|number} notificationId
+ */
+export const markNotificationAsRead = async (notificationId) => {
+  try {
+    const response = await API.put(`/notifications/${notificationId}/read`);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to mark notification as read:", error);
+    return { success: false, error };
+  }
+};
+
+// Default export object for backwards compatibility
+const notificationApi = {
+  sendAppointmentEmail,
+  sendBulkAppointmentEmails,
+  fetchNotifications,
+  markNotificationAsRead,
+};
+
+export default notificationApi;
