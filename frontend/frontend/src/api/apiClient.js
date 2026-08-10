@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-// Render Backend Live Production URL
-const API_BASE_URL = 'https://med-core-hms-backend.onrender.com';
+// Render Backend Live Production URL with API prefix and environment variable fallback
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://med-core-hms-backend.onrender.com/api/v1';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
