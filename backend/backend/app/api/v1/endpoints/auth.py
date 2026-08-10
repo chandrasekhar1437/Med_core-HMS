@@ -60,9 +60,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
     return user
 
 
-# 1. REGISTER (Supports both JSON payload and flexible field names)
+# 1. REGISTER
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-@router.post("/register/", status_code=status.HTTP_201_CREATED)
 async def register(request: Request):
     try:
         body = await request.json()
@@ -93,7 +92,7 @@ async def register(request: Request):
             "name": user_name,
             "full_name": user_name,
             "role": user_role,
-            "password_hash": hash_password(password),
+            "password_hash": hash_password(str(password)[:72]),
         }
 
         result = await db.users.insert_one(user_doc)
@@ -128,12 +127,11 @@ async def register(request: Request):
 
 # 2. FRONTEND JSON LOGIN
 @router.post("/login")
-@router.post("/login/")
 async def login(request: Request):
     try:
         body = await request.json()
         email_raw = body.get("email") or body.get("username") or ""
-        password = body.get("password") or ""
+        password = str(body.get("password") or "")
         req_role = body.get("role")
 
         email = str(email_raw).lower().strip()
@@ -145,7 +143,7 @@ async def login(request: Request):
             )
 
         user = await db.users.find_one({"email": email})
-        if not user or not verify_password(password, user.get("password_hash", "")):
+        if not user or not verify_password(password[:72], user.get("password_hash", "")):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password. Please check your credentials.",
@@ -193,10 +191,10 @@ async def login(request: Request):
 @router.post("/swagger-login", include_in_schema=False)
 async def swagger_login(form_data: OAuth2PasswordRequestForm = Depends()):
     email = str(form_data.username).lower().strip()
-    password = form_data.password
+    password = str(form_data.password)
 
     user = await db.users.find_one({"email": email})
-    if not user or not verify_password(password, user.get("password_hash", "")):
+    if not user or not verify_password(password[:72], user.get("password_hash", "")):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -279,13 +277,13 @@ async def change_password(
     user_id = current_user["id"]
 
     user = await db.users.find_one({"_id": ObjectId(user_id)})
-    if not verify_password(payload.current_password, user.get("password_hash", "")):
+    if not verify_password(payload.current_password[:72], user.get("password_hash", "")):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect current password",
         )
 
-    new_hash = hash_password(payload.new_password)
+    new_hash = hash_password(payload.new_password[:72])
     await db.users.update_one(
         {"_id": ObjectId(user_id)}, {"$set": {"password_hash": new_hash}}
     )

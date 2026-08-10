@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Import individual endpoint routers
 from app.api.v1.endpoints import (
     appointments,
     auth,
@@ -22,10 +21,10 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS for all origins, headers, and credentials
+# Valid CORS configuration supporting credentials across all origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex=".*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
