@@ -28,17 +28,21 @@ export default function Login() {
     setLoading(true);
     setError("");
 
+    // Normalize inputs for mobile browser compatibility
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanPassword = password.trim();
+
     try {
       const response = await API.post("/auth/login", {
-        email: email.trim(),
-        password: password,
+        email: cleanEmail,
+        password: cleanPassword,
         role: role,
       });
 
       const { access_token, user } = response.data;
       const userData = user || {
-        email,
-        name: email.split("@")[0],
+        email: cleanEmail,
+        name: cleanEmail.split("@")[0],
         role: role,
       };
 
@@ -84,7 +88,7 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} autoCapitalize="none" autoCorrect="off">
             {/* Role Selection Dropdown */}
             <div style={styles.inputGroup}>
               <label style={styles.label}>Select Role</label>
@@ -114,6 +118,9 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@medcore.com"
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   style={styles.input}
                 />
               </div>
@@ -130,6 +137,9 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   style={styles.input}
                 />
               </div>
