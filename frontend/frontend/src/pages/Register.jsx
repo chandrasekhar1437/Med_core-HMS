@@ -30,24 +30,29 @@ export default function Register() {
     setLoading(true);
     setError("");
 
+    // Clean inputs for mobile compatibility
+    const cleanName = name.trim();
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanPassword = password.trim();
+
     // Backend compatibility: sending both name and full_name
     const payload = {
-      name: name.trim(),
-      full_name: name.trim(),
-      email: email.trim(),
-      password: password,
+      name: cleanName,
+      full_name: cleanName,
+      email: cleanEmail,
+      password: cleanPassword,
       role: role,
     };
 
     try {
-      // Trying primary endpoint path
+      // Primary endpoint path
       let response;
       try {
-        response = await API.post("/api/v1/auth/register", payload);
+        response = await API.post("/auth/register", payload);
       } catch (firstErr) {
-        // Fallback endpoint path if baseURL already contains /api/v1
+        // Fallback endpoint path if route is prefixed with /api/v1
         if (firstErr.response && firstErr.response.status === 404) {
-          response = await API.post("/auth/register", payload);
+          response = await API.post("/api/v1/auth/register", payload);
         } else {
           throw firstErr;
         }
@@ -72,7 +77,7 @@ export default function Register() {
       } else if (typeof detail === "string") {
         setError(detail);
       } else {
-        setError("Registration failed (Server error). Check backend terminal.");
+        setError("Registration failed. Email may already be registered.");
       }
     } finally {
       setLoading(false);
@@ -98,7 +103,7 @@ export default function Register() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} autoCapitalize="none" autoCorrect="off">
             <div style={styles.inputGroup}>
               <label style={styles.label}>Full Name</label>
               <div style={styles.inputWrapper}>
@@ -124,6 +129,9 @@ export default function Register() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="user@medcore.com"
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   style={styles.input}
                 />
               </div>
@@ -139,6 +147,9 @@ export default function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a strong password"
                   required
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   style={styles.input}
                 />
               </div>
