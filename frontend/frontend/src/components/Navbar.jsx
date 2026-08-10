@@ -11,31 +11,98 @@ export default function Navbar() {
     navigate("/login");
   };
 
+  const role = (user?.role || "admin").toLowerCase();
+
   return (
     <nav style={styles.navbar}>
       <div style={styles.brand}>MedCore HMS</div>
       <div style={styles.navLinks}>
-        <Link to="/" style={styles.link}>Home</Link>
-        <Link to="/patients" style={styles.link}>Patients</Link>
-        <Link to="/doctors" style={styles.link}>Doctors</Link>
-        <Link to="/appointments" style={styles.link}>Appointments</Link>
-        <Link to="/prescriptions" style={styles.link}>Prescriptions</Link>
-        <Link to="/billing" style={styles.link}>Billing</Link>
-        <Link to="/medical-records" style={styles.link}>Medical Records</Link>
-        <Link to="/pharmacy" style={styles.link}>Pharmacy</Link>
-        <Link to="/laboratory" style={styles.link}>Laboratory</Link>
+        <Link to="/" style={styles.link}>
+          Dashboard
+        </Link>
+
+        {/* PATIENTS: Health Records, Appointments, Prescriptions */}
+        {role === "patient" && (
+          <>
+            <Link to="/medical-records" style={styles.link}>
+              Health Records
+            </Link>
+            <Link to="/appointments" style={styles.link}>
+              Appointments
+            </Link>
+            <Link to="/prescriptions" style={styles.link}>
+              Prescriptions
+            </Link>
+          </>
+        )}
+
+        {/* DOCTORS: Schedule, Patient List, Treatment Notes */}
+        {role === "doctor" && (
+          <>
+            <Link to="/appointments" style={styles.link}>
+              Schedule
+            </Link>
+            <Link to="/patients" style={styles.link}>
+              Patient List
+            </Link>
+            <Link to="/prescriptions" style={styles.link}>
+              Treatment Notes
+            </Link>
+          </>
+        )}
+
+        {/* ADMIN / STAFF: Billing, Appointments, Patient Registration */}
+        {(role === "admin" || role === "staff") && (
+          <>
+            <Link to="/patients" style={styles.link}>
+              Patient Registration
+            </Link>
+            <Link to="/appointments" style={styles.link}>
+              Appointments
+            </Link>
+            <Link to="/billing" style={styles.link}>
+              Billing
+            </Link>
+            <Link to="/doctors" style={styles.link}>
+              Doctors
+            </Link>
+            <Link to="/pharmacy" style={styles.link}>
+              Pharmacy
+            </Link>
+            <Link to="/laboratory" style={styles.link}>
+              Laboratory
+            </Link>
+          </>
+        )}
+
+        {/* NURSES: Assigned Tasks, Vital Signs, Medication Schedules */}
+        {role === "nurse" && (
+          <>
+            <Link to="/patients" style={styles.link}>
+              Assigned Tasks
+            </Link>
+            <Link to="/medical-records" style={styles.link}>
+              Vital Signs Tracking
+            </Link>
+            <Link to="/pharmacy" style={styles.link}>
+              Medication Schedules
+            </Link>
+          </>
+        )}
 
         {isAuthenticated ? (
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span style={{ fontSize: "14px", color: "#f59e0b", fontWeight: "600" }}>
-              {user?.email || "User"}
+              {user?.email || "User"} ({user?.role || "User"})
             </span>
             <button onClick={handleLogout} style={styles.logoutBtn}>
               Logout
             </button>
           </div>
         ) : (
-          <Link to="/login" style={styles.loginLink}>Login/Register</Link>
+          <Link to="/login" style={styles.loginLink}>
+            Login/Register
+          </Link>
         )}
       </div>
     </nav>
