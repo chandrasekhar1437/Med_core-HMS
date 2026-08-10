@@ -12,7 +12,7 @@ export default function Prescriptions() {
     try {
       setLoading(true);
       const response = await api.get("/prescriptions/");
-      setPrescriptions(response.data);
+      setPrescriptions(Array.isArray(response.data) ? response.data : []);
       setError("");
     } catch (err) {
       console.error("Error fetching prescriptions:", err);
@@ -51,6 +51,7 @@ export default function Prescriptions() {
       medicine: item.medicine || "",
       dosage: item.dosage || "",
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleDelete = async (id) => {
@@ -72,7 +73,104 @@ export default function Prescriptions() {
     return <div style={styles.loading}>Loading prescriptions...</div>;
 
   return (
-    <div style={styles.container}>
+    <div className="prescriptions-container" style={styles.container}>
+      <style>{`
+        .prescriptions-container {
+          padding: 30px;
+          max-width: 900px;
+          margin: 30px auto;
+          background-color: #ffffff;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+          box-sizing: border-box;
+        }
+
+        .rx-form-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 15px;
+        }
+
+        /* Mobile Responsive Card List */
+        .mobile-rx-list {
+          display: none;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: 15px;
+        }
+
+        .mobile-rx-card {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 8px;
+          padding: 16px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .mobile-rx-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+          padding-bottom: 6px;
+          border-bottom: 1px solid #f1f5f9;
+        }
+
+        .mobile-rx-patient {
+          font-weight: 700;
+          color: #0f172a;
+          font-size: 16px;
+        }
+
+        .mobile-rx-body {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          font-size: 14px;
+          color: #475569;
+          margin-bottom: 12px;
+        }
+
+        .mobile-rx-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .mobile-rx-actions button {
+          flex: 1;
+          text-align: center;
+        }
+
+        @media (max-width: 768px) {
+          .prescriptions-container {
+            padding: 16px;
+            margin: 10px auto;
+          }
+
+          .rx-form-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+          }
+
+          .rx-btn-group {
+            flex-direction: column;
+          }
+
+          .rx-btn-group button {
+            width: 100%;
+          }
+
+          .desktop-table-wrapper {
+            display: none;
+          }
+
+          .mobile-rx-list {
+            display: flex;
+          }
+        }
+      `}</style>
+
       <h2 style={styles.headerTitle}>Prescriptions Management</h2>
 
       {error && <div style={styles.errorBanner}>{error}</div>}
@@ -82,40 +180,45 @@ export default function Prescriptions() {
           {editingId ? "Edit Prescription" : "Add New Prescription"}
         </h3>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Patient Name / ID:</label>
-          <input
-            type="text"
-            value={form.patient}
-            onChange={(e) => setForm({ ...form, patient: e.target.value })}
-            required
-            style={styles.input}
-          />
+        <div className="rx-form-grid">
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Patient Name / ID:</label>
+            <input
+              type="text"
+              value={form.patient}
+              onChange={(e) => setForm({ ...form, patient: e.target.value })}
+              placeholder="e.g. PAT-101 or John Doe"
+              required
+              style={styles.input}
+            />
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Medicine:</label>
+            <input
+              type="text"
+              value={form.medicine}
+              onChange={(e) => setForm({ ...form, medicine: e.target.value })}
+              placeholder="e.g. Amoxicillin"
+              required
+              style={styles.input}
+            />
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Dosage:</label>
+            <input
+              type="text"
+              value={form.dosage}
+              onChange={(e) => setForm({ ...form, dosage: e.target.value })}
+              placeholder="e.g. 500mg - 3x daily"
+              required
+              style={styles.input}
+            />
+          </div>
         </div>
 
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Medicine:</label>
-          <input
-            type="text"
-            value={form.medicine}
-            onChange={(e) => setForm({ ...form, medicine: e.target.value })}
-            required
-            style={styles.input}
-          />
-        </div>
-
-        <div style={styles.inputGroup}>
-          <label style={styles.label}>Dosage:</label>
-          <input
-            type="text"
-            value={form.dosage}
-            onChange={(e) => setForm({ ...form, dosage: e.target.value })}
-            required
-            style={styles.input}
-          />
-        </div>
-
-        <div style={styles.buttonGroup}>
+        <div className="rx-btn-group" style={styles.buttonGroup}>
           <button type="submit" style={styles.primaryButton}>
             {editingId ? "Update Prescription" : "Save Prescription"}
           </button>
@@ -138,47 +241,88 @@ export default function Prescriptions() {
       {prescriptions.length === 0 ? (
         <p style={styles.noData}>No prescriptions found.</p>
       ) : (
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.tableHeaderRow}>
-                <th style={styles.th}>Patient</th>
-                <th style={styles.th}>Medicine</th>
-                <th style={styles.th}>Dosage</th>
-                <th style={styles.th}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {prescriptions.map((item, index) => {
-                const itemId = item.id || item._id;
-                return (
-                  <tr
-                    key={itemId}
-                    style={index % 2 === 0 ? styles.trEven : styles.trOdd}
-                  >
-                    <td style={styles.td}>{item.patient}</td>
-                    <td style={styles.td}>{item.medicine}</td>
-                    <td style={styles.td}>{item.dosage}</td>
-                    <td style={styles.td}>
-                      <button
-                        onClick={() => handleEdit(item)}
-                        style={styles.editButton}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(itemId)}
-                        style={styles.deleteButton}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Desktop View Table */}
+          <div className="desktop-table-wrapper" style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr style={styles.tableHeaderRow}>
+                  <th style={styles.th}>Patient</th>
+                  <th style={styles.th}>Medicine</th>
+                  <th style={styles.th}>Dosage</th>
+                  <th style={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {prescriptions.map((item, index) => {
+                  const itemId = item.id || item._id;
+                  return (
+                    <tr
+                      key={itemId}
+                      style={index % 2 === 0 ? styles.trEven : styles.trOdd}
+                    >
+                      <td style={styles.td}>
+                        <strong>{item.patient}</strong>
+                      </td>
+                      <td style={styles.td}>{item.medicine}</td>
+                      <td style={styles.td}>{item.dosage}</td>
+                      <td style={styles.td}>
+                        <button
+                          onClick={() => handleEdit(item)}
+                          style={styles.editButton}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(itemId)}
+                          style={styles.deleteButton}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile View Cards */}
+          <div className="mobile-rx-list">
+            {prescriptions.map((item) => {
+              const itemId = item.id || item._id;
+              return (
+                <div key={itemId} className="mobile-rx-card">
+                  <div className="mobile-rx-header">
+                    <span className="mobile-rx-patient">{item.patient}</span>
+                  </div>
+                  <div className="mobile-rx-body">
+                    <div>
+                      <strong>Medicine:</strong> {item.medicine}
+                    </div>
+                    <div>
+                      <strong>Dosage:</strong> {item.dosage}
+                    </div>
+                  </div>
+                  <div className="mobile-rx-actions">
+                    <button
+                      onClick={() => handleEdit(item)}
+                      style={styles.editButton}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(itemId)}
+                      style={styles.deleteButton}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
@@ -249,10 +393,12 @@ const styles = {
     border: "1px solid #ced4da",
     fontSize: "14px",
     boxSizing: "border-box",
+    backgroundColor: "#ffffff",
   },
   buttonGroup: {
     display: "flex",
     gap: "10px",
+    marginTop: "10px",
   },
   primaryButton: {
     padding: "10px 18px",
@@ -262,6 +408,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "14px",
   },
   secondaryButton: {
     padding: "10px 18px",
@@ -271,6 +418,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "14px",
   },
   tableWrapper: {
     overflowX: "auto",
@@ -308,6 +456,7 @@ const styles = {
     cursor: "pointer",
     marginRight: "6px",
     fontWeight: "600",
+    fontSize: "13px",
   },
   deleteButton: {
     padding: "6px 12px",
@@ -317,6 +466,7 @@ const styles = {
     borderRadius: "4px",
     cursor: "pointer",
     fontWeight: "600",
+    fontSize: "13px",
   },
   noData: {
     color: "#6c757d",

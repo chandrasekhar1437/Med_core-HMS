@@ -6,6 +6,7 @@
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  box-sizing: border-box;
 }
 
 .pharmacy-header {
@@ -41,7 +42,7 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
   margin-bottom: 15px;
 }
@@ -66,6 +67,7 @@
   font-size: 14px;
   width: 100%;
   box-sizing: border-box;
+  background-color: #ffffff;
 }
 
 .form-actions {
@@ -98,18 +100,18 @@
 }
 
 .btn-edit {
-  padding: 6px 12px;
+  padding: 8px 14px;
   background-color: #ffc107;
   color: #212529;
-  margin-right: 6px;
 }
 
 .btn-delete {
-  padding: 6px 12px;
+  padding: 8px 14px;
   background-color: #dc3545;
   color: #ffffff;
 }
 
+/* Desktop View */
 .table-container {
   overflow-x: auto;
   margin-top: 15px;
@@ -146,6 +148,7 @@
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
+  display: inline-block;
 }
 
 .stock-in {
@@ -163,4 +166,82 @@
   padding: 30px;
   color: #6c757d;
   font-style: italic;
+}
+
+/* Mobile View Styles */
+.mobile-pharmacy-list {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.mobile-pharmacy-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.mobile-med-name {
+  font-weight: 700;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.mobile-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  color: #475569;
+  margin-bottom: 12px;
+}
+
+.mobile-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.mobile-card-actions button {
+  flex: 1;
+  text-align: center;
+}
+
+/* Mobile Breakpoint */
+@media (max-width: 768px) {
+  .pharmacy-container {
+    padding: 16px;
+    margin: 10px auto;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions button {
+    width: 100%;
+  }
+
+  .desktop-table-wrapper {
+    display: none;
+  }
+
+  .mobile-pharmacy-list {
+    display: flex;
+  }
 }

@@ -95,6 +95,7 @@ export default function Pharmacy() {
       stock_quantity: med.stock_quantity || "",
       unit_price: med.unit_price || "",
     });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancelEdit = () => {
@@ -206,55 +207,90 @@ export default function Pharmacy() {
       </div>
 
       <h3>Stock Directory</h3>
-      <div className="table-container">
-        {loading ? (
-          <div className="no-data">Loading inventory...</div>
-        ) : medicines.length === 0 ? (
-          <div className="no-data">No medicines in inventory yet.</div>
-        ) : (
-          <table className="pharmacy-table">
-            <thead>
-              <tr>
-                <th>Medicine</th>
-                <th>Category</th>
-                <th>Dosage</th>
-                <th>Stock Left</th>
-                <th>Unit Price</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {medicines.map((med) => {
-                const medId = med.id || med._id;
-                const isLowStock = med.stock_quantity < 10;
-                return (
-                  <tr key={medId}>
-                    <td>
-                      <strong>{med.name}</strong>
-                    </td>
-                    <td>{med.category}</td>
-                    <td>{med.dosage}</td>
-                    <td>
-                      <span className={`badge-stock ${isLowStock ? "stock-low" : "stock-in"}`}>
-                        {med.stock_quantity} units
-                      </span>
-                    </td>
-                    <td>${Number(med.unit_price).toFixed(2)}</td>
-                    <td>
-                      <button className="btn btn-edit" onClick={() => handleEditClick(med)}>
-                        Edit
-                      </button>
-                      <button className="btn btn-delete" onClick={() => handleDelete(medId)}>
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+      
+      {loading ? (
+        <div className="no-data">Loading inventory...</div>
+      ) : medicines.length === 0 ? (
+        <div className="no-data">No medicines in inventory yet.</div>
+      ) : (
+        <>
+          {/* Desktop Table View */}
+          <div className="table-container desktop-table-wrapper">
+            <table className="pharmacy-table">
+              <thead>
+                <tr>
+                  <th>Medicine</th>
+                  <th>Category</th>
+                  <th>Dosage</th>
+                  <th>Stock Left</th>
+                  <th>Unit Price</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {medicines.map((med) => {
+                  const medId = med.id || med._id;
+                  const isLowStock = med.stock_quantity < 10;
+                  return (
+                    <tr key={medId}>
+                      <td>
+                        <strong>{med.name}</strong>
+                      </td>
+                      <td>{med.category}</td>
+                      <td>{med.dosage}</td>
+                      <td>
+                        <span className={`badge-stock ${isLowStock ? "stock-low" : "stock-in"}`}>
+                          {med.stock_quantity} units
+                        </span>
+                      </td>
+                      <td>${Number(med.unit_price).toFixed(2)}</td>
+                      <td>
+                        <button className="btn btn-edit" onClick={() => handleEditClick(med)}>
+                          Edit
+                        </button>
+                        <button className="btn btn-delete" onClick={() => handleDelete(medId)}>
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile Cards List View */}
+          <div className="mobile-pharmacy-list">
+            {medicines.map((med) => {
+              const medId = med.id || med._id;
+              const isLowStock = med.stock_quantity < 10;
+              return (
+                <div key={medId} className="mobile-pharmacy-card">
+                  <div className="mobile-card-header">
+                    <span className="mobile-med-name">{med.name}</span>
+                    <span className={`badge-stock ${isLowStock ? "stock-low" : "stock-in"}`}>
+                      {med.stock_quantity} units
+                    </span>
+                  </div>
+                  <div className="mobile-card-body">
+                    <div><strong>Category:</strong> {med.category}</div>
+                    <div><strong>Dosage:</strong> {med.dosage}</div>
+                    <div><strong>Price:</strong> ${Number(med.unit_price).toFixed(2)}</div>
+                  </div>
+                  <div className="mobile-card-actions">
+                    <button className="btn btn-edit" onClick={() => handleEditClick(med)}>
+                      Edit
+                    </button>
+                    <button className="btn btn-delete" onClick={() => handleDelete(medId)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
