@@ -1,40 +1,40 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import API from "../services/api";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  // Pre-load user state from localStorage if available to avoid flash of unauthenticated state
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    try {
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [loading, setLoading] = useState(true);
 
-  // Load user profile on startup if token exists
+  // Validate session on app startup if a token exists
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token") || localStorage.getItem("access_token");
       if (!token) {
         setLoading(false);
         return;
       }
 
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/v1/auth/me", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.ok) {
-          const userData = await res.json();
-          setUser(userData);
-        } else {
-          // Token expired or invalid
-          localStorage.removeItem("token");
-          setUser(null);
-        }
+        // Uses central API instance instead of hardcoded localhost URL
+        const res = await API.get("/auth/me");
+        setUser(res.data);
+        localStorage.setItem("user", JSON.stringify(res.data));
       } catch (err) {
-        console.error("Auth check failed:", err);
+        console.error("Auth session check failed:", err);
         localStorage.removeItem("token");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("user");
         setUser(null);
       } finally {
         setLoading(false);
@@ -46,29 +46,49 @@ export function AuthProvider({ children }) {
 
   const loginUser = (token, userData) => {
     localStorage.setItem("token", token);
+    localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("user");
     setUser(null);
-    window.location.href = "/login";
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user || !!localStorage.getItem("token"),
         loading,
-        login: loginUser, // Alias for backward compatibility
+        login: loginUser, // Backward compatibility alias
         loginUser,
         logout,
       }}
     >
-      {!loading && children}
+      {!loading ? children : (
+        <div style={styles.loader}>
+          <p>Restoring session...</p>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 }
 
 export const useAuth = () => useContext(AuthContext);
+
+const styles = {
+  loader: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    height: "100vh",
+    fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
+    color: "#64748b",
+  },
+};
