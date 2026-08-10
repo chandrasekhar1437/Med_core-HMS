@@ -15,6 +15,7 @@ except ImportError:
 MONGO_DETAILS = (
     os.getenv("MONGO_DETAILS")
     or os.getenv("MONGODB_URL")
+    or os.getenv("DATABASE_URL")
     or "mongodb://localhost:27017"
 )
 
@@ -24,16 +25,27 @@ DB_NAME = (
     or "med_core_hms"
 )
 
-# Initialize Motor AsyncIOMotorClient with a 5-second server selection timeout
+# Determine if TLS/SSL is required (Atlas connections use mongodb+srv://)
+is_atlas = "mongodb+srv" in MONGO_DETAILS or "ssl=true" in MONGO_DETAILS.lower()
+
+client_kwargs = {
+    "serverSelectionTimeoutMS": 5000,
+}
+
+if is_atlas:
+    client_kwargs["tls"] = True
+    client_kwargs["tlsAllowInvalidCertificates"] = True
+
+# Initialize Motor AsyncIOMotorClient
 client = motor.motor_asyncio.AsyncIOMotorClient(
     MONGO_DETAILS,
-    serverSelectionTimeoutMS=5000
+    **client_kwargs
 )
 
 # Active Async MongoDB Instance
 db = client[DB_NAME]
 
-# Helper function for endpoint dependency injection if needed
+# Helper function for endpoint dependency injection
 async def get_database():
     return db
 

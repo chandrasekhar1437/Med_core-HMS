@@ -1,15 +1,3 @@
-import os
-from motor.motor_asyncio import AsyncIOMotorClient
+from app.core.database import MONGO_DETAILS, DB_NAME, client, db, get_database
 
-# Environment Variables extraction with local MongoDB fallbacks
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
-DATABASE_NAME = os.getenv("DATABASE_NAME", "med_core_hms")
-
-# Initialize Motor Async Client for MongoDB
-client = AsyncIOMotorClient(MONGODB_URL)
-db = client[DATABASE_NAME]
-
-
-# Helper function to get database instance if needed in endpoints
-async def get_database():
-    return db
+__all__ = ["MONGO_DETAILS", "DB_NAME", "client", "db", "get_database"]
