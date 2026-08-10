@@ -2,7 +2,7 @@ import traceback
 from typing import Any, Dict, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
 from app.core.database import db
@@ -14,36 +14,17 @@ from app.core.security import (
 )
 from app.schemas.user import (
     PasswordChange,
-    UserLogin,
     UserRegister,
     UserUpdate,
 )
 
-# 1. DEFINE ROUTER FIRST BEFORE ANY DECORATORS
+# 1. Initialize router and OAuth2 bearer scheme
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 
-# Helper function to extract form data safely without breaking FastAPI inspect
-async def get_optional_form(request: Request) -> Optional[OAuth2PasswordRequestForm]:
-    try:
-        form = await request.form()
-        if "username" in form and "password" in form:
-            return OAuth2PasswordRequestForm(
-                grant_type=form.get("grant_type", "password"),
-                username=str(form.get("username")),
-                password=str(form.get("password")),
-                scope=str(form.get("scope", "")),
-                client_id=form.get("client_id"),
-                client_secret=form.get("client_secret"),
-            )
-    except Exception:
-        pass
-    return None
-
-
 def normalize_role(role: Optional[str]) -> str:
-    """Normalizes role variations for accurate comparison."""
+    """Normalizes role variations (e.g., Admin vs Administrator) for accurate comparison."""
     if not role:
         return "patient"
     r = str(role).strip().lower()
@@ -55,6 +36,7 @@ def normalize_role(role: Optional[str]) -> str:
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any]:
+    """Dependency to retrieve and validate the authenticated user from JWT token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate authentication credentials",
@@ -136,33 +118,13 @@ async def register(payload: UserRegister):
         )
 
 
-# 2. LOGIN (Handles JSON payloads & OAuth2 Form Data for Swagger UI)
+# 2. LOGIN (Fully compatible with OpenAPI 3.1 & Swagger Authorize modal)
 @router.post("/login")
 @router.post("/login/")
-async def login(
-    payload: Optional[UserLogin] = None,
-    form_data: Optional[OAuth2PasswordRequestForm] = Depends(get_optional_form),
-):
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
-        email_raw = ""
-        password = ""
-        req_role = None
-
-        if payload and payload.email:
-            email_raw = payload.email
-            password = payload.password
-            req_role = payload.role
-        elif form_data and form_data.username:
-            email_raw = form_data.username
-            password = form_data.password
-
-        email = str(email_raw).lower().strip()
-
-        if not email or not password:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email and password are required",
-            )
+        email = str(form_data.username).lower().strip()
+        password = form_data.password
 
         user = await db.users.find_one({"email": email})
         if not user or not verify_password(password, user.get("password_hash", "")):
@@ -173,12 +135,6 @@ async def login(
 
         user_id = str(user["_id"])
         db_role = user.get("role", "Patient")
-
-        if req_role and normalize_role(req_role) != normalize_role(db_role):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"User exists as '{db_role}' but selected '{req_role}'",
-            )
 
         access_token = create_access_token(
             data={"sub": user_id, "email": user["email"], "role": db_role}
