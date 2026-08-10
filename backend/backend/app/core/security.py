@@ -1,26 +1,29 @@
 ﻿from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
+import bcrypt
 from jose import jwt
-from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_password(password: str) -> str:
-    """Safely hash password by slicing raw string to max 72 chars to prevent bcrypt 72-byte error."""
-    safe_password = str(password)[:72]
-    return pwd_context.hash(safe_password)
+    """Hashes a password using bcrypt directly with explicit 72-byte truncation."""
+    # Convert string to bytes and truncate to maximum 72 bytes
+    pwd_bytes = str(password).encode("utf-8")[:72]
+    # Generate salt and hash
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Safely verify password with truncation."""
+    """Verifies a plain text password against a bcrypt hash."""
     if not plain_password or not hashed_password:
         return False
-    safe_password = str(plain_password)[:72]
     try:
-        return pwd_context.verify(safe_password, hashed_password)
+        pwd_bytes = str(plain_password).encode("utf-8")[:72]
+        hash_bytes = hashed_password.encode("utf-8")
+        return bcrypt.checkpw(pwd_bytes, hash_bytes)
     except Exception:
         return False
 
@@ -28,6 +31,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(
     data: dict, expires_delta: Optional[timedelta] = None
 ) -> str:
+    """Creates a JWT access token."""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -44,6 +48,7 @@ def create_access_token(
 
 
 def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
+    """Decodes a JWT access token."""
     try:
         return jwt.decode(
             token,
