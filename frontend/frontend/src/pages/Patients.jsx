@@ -5,6 +5,7 @@ import {
   updatePatient,
   deletePatient,
 } from "../services/patientApi";
+import "./Patients.css";
 
 export default function Patients() {
   const [patients, setPatients] = useState([]);
@@ -100,160 +101,53 @@ export default function Patients() {
   };
 
   if (loading && patients.length === 0)
-    return <div style={styles.loading}>Loading patients...</div>;
+    return <div className="patients-loading">Loading patients...</div>;
 
   return (
-    <div className="patients-container" style={styles.container}>
-      <style>{`
-        .patients-container {
-          padding: 30px;
-          max-width: 950px;
-          margin: 30px auto;
-          background-color: #ffffff;
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-          box-sizing: border-box;
-        }
+    <div className="patients-container">
+      <h2 className="patients-header-title">Patients Management</h2>
 
-        .patient-form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 15px;
-        }
+      {error && <div className="patients-error-banner">{error}</div>}
 
-        /* Mobile Card View */
-        .mobile-patients-list {
-          display: none;
-          flex-direction: column;
-          gap: 12px;
-          margin-top: 15px;
-        }
-
-        .patient-card-mobile {
-          background-color: #ffffff;
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          padding: 16px;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .mobile-patient-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-          padding-bottom: 6px;
-          border-bottom: 1px solid #f1f5f9;
-        }
-
-        .mobile-patient-name {
-          font-weight: 700;
-          color: #0f172a;
-          font-size: 16px;
-        }
-
-        .gender-badge {
-          font-size: 12px;
-          font-weight: 600;
-          padding: 2px 8px;
-          border-radius: 12px;
-          background-color: #e0f2fe;
-          color: #0369a1;
-        }
-
-        .mobile-patient-body {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          font-size: 14px;
-          color: #475569;
-          margin-bottom: 12px;
-        }
-
-        .mobile-card-actions {
-          display: flex;
-          gap: 8px;
-        }
-
-        .mobile-card-actions button {
-          flex: 1;
-          padding: 8px;
-          text-align: center;
-        }
-
-        @media (max-width: 768px) {
-          .patients-container {
-            padding: 16px;
-            margin: 10px auto;
-          }
-
-          .patient-form-grid {
-            grid-template-columns: 1fr;
-            gap: 0;
-          }
-
-          .patient-btn-group {
-            flex-direction: column;
-          }
-
-          .patient-btn-group button {
-            width: 100%;
-          }
-
-          .desktop-table-wrapper {
-            display: none;
-          }
-
-          .mobile-patients-list {
-            display: flex;
-          }
-        }
-      `}</style>
-
-      <h2 style={styles.headerTitle}>Patients Management</h2>
-
-      {error && <div style={styles.errorBanner}>{error}</div>}
-
-      <form onSubmit={handleSubmit} style={styles.formCard}>
-        <h3 style={styles.formTitle}>
+      <form onSubmit={handleSubmit} className="patients-form-card">
+        <h3 className="patients-form-title">
           {editingId ? "Edit Patient" : "Add New Patient"}
         </h3>
 
         <div className="patient-form-grid">
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Full Name:</label>
+          <div className="patients-input-group">
+            <label className="patients-label">Full Name:</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
-              style={styles.input}
+              className="patients-input"
               placeholder="e.g. John Doe"
             />
           </div>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Age:</label>
+          <div className="patients-input-group">
+            <label className="patients-label">Age:</label>
             <input
               type="number"
               value={form.age}
               onChange={(e) => setForm({ ...form, age: e.target.value })}
               required
-              style={styles.input}
+              className="patients-input"
               placeholder="e.g. 32"
             />
           </div>
         </div>
 
         <div className="patient-form-grid">
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Gender:</label>
+          <div className="patients-input-group">
+            <label className="patients-label">Gender:</label>
             <select
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value })}
               required
-              style={styles.input}
+              className="patients-input"
             >
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
@@ -262,21 +156,21 @@ export default function Patients() {
             </select>
           </div>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Condition:</label>
+          <div className="patients-input-group">
+            <label className="patients-label">Condition:</label>
             <input
               type="text"
               value={form.condition}
               onChange={(e) => setForm({ ...form, condition: e.target.value })}
               required
-              style={styles.input}
+              className="patients-input"
               placeholder="e.g. Hypertension"
             />
           </div>
         </div>
 
-        <div className="patient-btn-group" style={styles.buttonGroup}>
-          <button type="submit" style={styles.primaryButton}>
+        <div className="patient-btn-group">
+          <button type="submit" className="patients-primary-button">
             {editingId ? "Update Patient" : "Save Patient"}
           </button>
           {editingId && (
@@ -286,7 +180,7 @@ export default function Patients() {
                 setEditingId(null);
                 setForm({ name: "", age: "", gender: "", condition: "" });
               }}
-              style={styles.secondaryButton}
+              className="patients-secondary-button"
             >
               Cancel
             </button>
@@ -294,45 +188,45 @@ export default function Patients() {
         </div>
       </form>
 
-      <h3 style={styles.subHeader}>Patients List</h3>
+      <h3 className="patients-sub-header">Patients List</h3>
       {patients.length === 0 ? (
-        <p style={styles.noData}>No patients found.</p>
+        <p className="patients-no-data">No patients found.</p>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="desktop-table-wrapper" style={styles.tableWrapper}>
-            <table style={styles.table}>
+          <div className="desktop-table-wrapper">
+            <table className="patients-table">
               <thead>
-                <tr style={styles.tableHeaderRow}>
-                  <th style={styles.th}>Name</th>
-                  <th style={styles.th}>Age</th>
-                  <th style={styles.th}>Gender</th>
-                  <th style={styles.th}>Condition</th>
-                  <th style={styles.th}>Actions</th>
+                <tr className="patients-table-header-row">
+                  <th>Name</th>
+                  <th>Age</th>
+                  <th>Gender</th>
+                  <th>Condition</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {patients.map((item, index) => (
                   <tr
                     key={item.id || item._id}
-                    style={index % 2 === 0 ? styles.trEven : styles.trOdd}
+                    className={index % 2 === 0 ? "patients-tr-even" : "patients-tr-odd"}
                   >
-                    <td style={styles.td}>
+                    <td>
                       <strong>{item.name}</strong>
                     </td>
-                    <td style={styles.td}>{item.age}</td>
-                    <td style={styles.td}>{item.gender}</td>
-                    <td style={styles.td}>{item.condition}</td>
-                    <td style={styles.td}>
+                    <td>{item.age}</td>
+                    <td>{item.gender}</td>
+                    <td>{item.condition}</td>
+                    <td>
                       <button
                         onClick={() => handleEdit(item)}
-                        style={styles.editButton}
+                        className="patients-edit-button"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDelete(item)}
-                        style={styles.deleteButton}
+                        className="patients-delete-button"
                       >
                         Delete
                       </button>
@@ -358,13 +252,13 @@ export default function Patients() {
                 <div className="mobile-card-actions">
                   <button
                     onClick={() => handleEdit(item)}
-                    style={styles.editButton}
+                    className="patients-edit-button"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(item)}
-                    style={styles.deleteButton}
+                    className="patients-delete-button"
                   >
                     Delete
                   </button>
@@ -377,149 +271,3 @@ export default function Patients() {
     </div>
   );
 }
-
-const styles = {
-  container: {
-    padding: "30px",
-    maxWidth: "950px",
-    margin: "30px auto",
-    backgroundColor: "#ffffff",
-    borderRadius: "8px",
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-    fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
-  },
-  headerTitle: {
-    color: "#2c3e50",
-    marginBottom: "20px",
-    borderBottom: "2px solid #eaeaea",
-    paddingBottom: "10px",
-  },
-  subHeader: {
-    color: "#34495e",
-    marginTop: "30px",
-    marginBottom: "15px",
-  },
-  loading: {
-    textAlign: "center",
-    padding: "50px",
-    fontSize: "18px",
-    color: "#7f8c8d",
-  },
-  errorBanner: {
-    backgroundColor: "#f8d7da",
-    color: "#721c24",
-    padding: "12px",
-    borderRadius: "4px",
-    marginBottom: "20px",
-    border: "1px solid #f5c6cb",
-  },
-  formCard: {
-    backgroundColor: "#f8f9fa",
-    padding: "20px",
-    borderRadius: "6px",
-    border: "1px solid #e9ecef",
-    marginBottom: "25px",
-  },
-  formTitle: {
-    marginTop: "0",
-    marginBottom: "15px",
-    color: "#495057",
-    fontSize: "18px",
-  },
-  inputGroup: {
-    marginBottom: "15px",
-  },
-  label: {
-    display: "block",
-    marginBottom: "5px",
-    fontWeight: "600",
-    color: "#495057",
-    fontSize: "14px",
-  },
-  input: {
-    width: "100%",
-    padding: "10px",
-    borderRadius: "4px",
-    border: "1px solid #ced4da",
-    fontSize: "14px",
-    boxSizing: "border-box",
-    backgroundColor: "#ffffff",
-  },
-  buttonGroup: {
-    display: "flex",
-    gap: "10px",
-    marginTop: "10px",
-  },
-  primaryButton: {
-    padding: "10px 18px",
-    backgroundColor: "#007bff",
-    color: "#ffffff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "14px",
-  },
-  secondaryButton: {
-    padding: "10px 18px",
-    backgroundColor: "#6c757d",
-    color: "#ffffff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "14px",
-  },
-  tableWrapper: {
-    overflowX: "auto",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    textAlign: "left",
-    fontSize: "14px",
-  },
-  tableHeaderRow: {
-    backgroundColor: "#343a40",
-    color: "#ffffff",
-  },
-  th: {
-    padding: "12px",
-    borderBottom: "2px solid #dee2e6",
-  },
-  td: {
-    padding: "12px",
-    borderBottom: "1px solid #dee2e6",
-  },
-  trEven: {
-    backgroundColor: "#fdfdfd",
-  },
-  trOdd: {
-    backgroundColor: "#f8f9fa",
-  },
-  editButton: {
-    padding: "6px 12px",
-    backgroundColor: "#ffc107",
-    color: "#212529",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    marginRight: "6px",
-    fontWeight: "600",
-    fontSize: "13px",
-  },
-  deleteButton: {
-    padding: "6px 12px",
-    backgroundColor: "#dc3545",
-    color: "#ffffff",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "13px",
-  },
-  noData: {
-    color: "#6c757d",
-    fontStyle: "italic",
-  },
-};

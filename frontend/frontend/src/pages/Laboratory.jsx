@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Trash2, RefreshCw, FlaskConical, X, Edit2 } from "lucide-react";
 import API from "../services/api";
+import "./Laboratory.css";
 
 export default function Laboratory() {
   const [records, setRecords] = useState([]);
@@ -104,276 +105,6 @@ export default function Laboratory() {
 
   return (
     <div className="lab-container">
-      <style>{`
-        .lab-container {
-          padding: 2rem;
-          max-width: 1200px;
-          margin: 0 auto;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          box-sizing: border-box;
-        }
-
-        .lab-header-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 1.5rem;
-          gap: 1rem;
-          flex-wrap: wrap;
-        }
-
-        .lab-title {
-          font-size: 1.5rem;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin: 0;
-          color: #0f172a;
-        }
-
-        .lab-subtitle {
-          color: #64748b;
-          font-size: 0.875rem;
-          margin: 0.25rem 0 0 0;
-        }
-
-        .btn-add-test {
-          background-color: #9333ea;
-          color: #fff;
-          padding: 0.6rem 1.2rem;
-          border-radius: 0.5rem;
-          border: none;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-weight: 600;
-          font-size: 0.9rem;
-          transition: background-color 0.2s ease;
-        }
-
-        .btn-add-test:hover {
-          background-color: #7e22ce;
-        }
-
-        .alert-error {
-          background-color: #fee2e2;
-          color: #dc2626;
-          padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
-          margin-bottom: 1rem;
-          font-size: 0.875rem;
-        }
-
-        .lab-controls-row {
-          display: flex;
-          gap: 0.75rem;
-          margin-bottom: 1.5rem;
-          align-items: center;
-        }
-
-        .search-input-wrapper {
-          position: relative;
-          flex: 1;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 0.6rem 0.75rem 0.6rem 2.25rem;
-          border-radius: 0.5rem;
-          border: 1px solid #cbd5e1;
-          font-size: 0.875rem;
-          box-sizing: border-box;
-          outline: none;
-        }
-
-        .search-input:focus {
-          border-color: #9333ea;
-        }
-
-        .btn-refresh {
-          padding: 0.6rem;
-          border: 1px solid #cbd5e1;
-          border-radius: 0.5rem;
-          background: #fff;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        /* Desktop Table View */
-        .desktop-table-wrapper {
-          background-color: #fff;
-          border-radius: 0.5rem;
-          border: 1px solid #e2e8f0;
-          overflow: hidden;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        .lab-table {
-          width: 100%;
-          border-collapse: collapse;
-          text-align: left;
-          font-size: 0.875rem;
-        }
-
-        .lab-table th {
-          background-color: #f8fafc;
-          padding: 0.75rem 1rem;
-          color: #475569;
-          font-weight: 600;
-          border-bottom: 1px solid #e2e8f0;
-        }
-
-        .lab-table td {
-          padding: 0.75rem 1rem;
-          border-bottom: 1px solid #f1f5f9;
-          color: #1e293b;
-        }
-
-        .status-badge {
-          padding: 0.25rem 0.6rem;
-          border-radius: 0.25rem;
-          font-size: 0.75rem;
-          font-weight: 600;
-          display: inline-block;
-        }
-
-        /* Mobile View Cards */
-        .mobile-cards-list {
-          display: none;
-          flex-direction: column;
-          gap: 1rem;
-        }
-
-        .lab-mobile-card {
-          background-color: #ffffff;
-          border: 1px solid #e2e8f0;
-          border-radius: 0.5rem;
-          padding: 1rem;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .mobile-card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid #f1f5f9;
-          padding-bottom: 0.5rem;
-          margin-bottom: 0.75rem;
-        }
-
-        .patient-title-mobile {
-          font-weight: 700;
-          font-size: 1rem;
-          color: #0f172a;
-        }
-
-        .mobile-card-body {
-          display: flex;
-          flex-direction: column;
-          gap: 0.35rem;
-          font-size: 0.875rem;
-          color: #475569;
-          margin-bottom: 1rem;
-        }
-
-        .mobile-card-actions {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .mobile-action-btn {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.35rem;
-          padding: 0.5rem;
-          border: 1px solid #cbd5e1;
-          border-radius: 0.375rem;
-          background-color: #f8fafc;
-          font-size: 0.85rem;
-          font-weight: 600;
-          cursor: pointer;
-        }
-
-        /* Modal Layout */
-        .modal-overlay {
-          position: fixed;
-          inset: 0;
-          background-color: rgba(15, 23, 42, 0.6);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
-          padding: 1rem;
-          backdrop-filter: blur(2px);
-        }
-
-        .modal-card {
-          background-color: #fff;
-          padding: 1.5rem;
-          border-radius: 0.5rem;
-          width: 100%;
-          max-width: 500px;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
-          box-sizing: border-box;
-        }
-
-        .modal-form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 0.75rem;
-        }
-
-        .modal-form-grid input,
-        .modal-form-grid select {
-          padding: 0.6rem;
-          border: 1px solid #cbd5e1;
-          border-radius: 0.375rem;
-          font-size: 0.875rem;
-          outline: none;
-          box-sizing: border-box;
-          width: 100%;
-        }
-
-        /* Responsive Breakpoints */
-        @media (max-width: 768px) {
-          .lab-container {
-            padding: 1rem;
-          }
-
-          .lab-header-row {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .btn-add-test {
-            width: 100%;
-            justify-content: center;
-          }
-
-          .desktop-table-wrapper {
-            display: none;
-          }
-
-          .mobile-cards-list {
-            display: flex;
-          }
-
-          .modal-form-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .modal-actions-container {
-            grid-column: span 1 !important;
-          }
-        }
-      `}</style>
-
       {/* Header */}
       <div className="lab-header-row">
         <div>
@@ -394,16 +125,7 @@ export default function Laboratory() {
       {/* Controls */}
       <div className="lab-controls-row">
         <div className="search-input-wrapper">
-          <Search
-            size={18}
-            style={{
-              position: "absolute",
-              left: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "#94a3b8",
-            }}
-          />
+          <Search size={18} className="search-icon" />
           <input
             type="text"
             placeholder="Search by patient, test name, or category..."
@@ -417,7 +139,7 @@ export default function Laboratory() {
         </button>
       </div>
 
-      {/* Desktop Table */}
+      {/* Desktop Table View */}
       <div className="desktop-table-wrapper">
         <table className="lab-table">
           <thead>
@@ -434,19 +156,20 @@ export default function Laboratory() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "#94a3b8" }}>
+                <td colSpan={7} className="empty-state">
                   Loading lab records...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "#94a3b8" }}>
+                <td colSpan={7} className="empty-state">
                   No test records found
                 </td>
               </tr>
             ) : (
               filtered.map((item) => {
                 const recordId = item.id || item._id;
+                const isCompleted = item.status === "Completed";
                 return (
                   <tr key={recordId}>
                     <td style={{ fontWeight: "600", color: "#0f172a" }}>
@@ -456,13 +179,7 @@ export default function Laboratory() {
                     <td>{item.category}</td>
                     <td>{item.result || "Pending"}</td>
                     <td>
-                      <span
-                        className="status-badge"
-                        style={{
-                          backgroundColor: item.status === "Completed" ? "#dcfce7" : "#fef9c3",
-                          color: item.status === "Completed" ? "#15803d" : "#a16207",
-                        }}
-                      >
+                      <span className={`status-badge ${isCompleted ? "status-completed" : "status-pending"}`}>
                         {item.status}
                       </span>
                     </td>
@@ -470,13 +187,15 @@ export default function Laboratory() {
                     <td style={{ textAlign: "right" }}>
                       <button
                         onClick={() => handleOpenEditModal(item)}
-                        style={{ border: "none", background: "none", cursor: "pointer", marginRight: "0.5rem" }}
+                        className="icon-btn icon-btn-edit"
+                        title="Edit Record"
                       >
                         <Edit2 size={16} color="#d97706" />
                       </button>
                       <button
                         onClick={() => handleDelete(recordId)}
-                        style={{ border: "none", background: "none", cursor: "pointer" }}
+                        className="icon-btn"
+                        title="Delete Record"
                       >
                         <Trash2 size={16} color="#dc2626" />
                       </button>
@@ -492,27 +211,18 @@ export default function Laboratory() {
       {/* Mobile Card View */}
       <div className="mobile-cards-list">
         {loading ? (
-          <div style={{ textAlign: "center", padding: "2rem", color: "#94a3b8" }}>
-            Loading lab records...
-          </div>
+          <div className="empty-state">Loading lab records...</div>
         ) : filtered.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "2rem", color: "#94a3b8" }}>
-            No test records found
-          </div>
+          <div className="empty-state">No test records found</div>
         ) : (
           filtered.map((item) => {
             const recordId = item.id || item._id;
+            const isCompleted = item.status === "Completed";
             return (
               <div key={recordId} className="lab-mobile-card">
                 <div className="mobile-card-header">
                   <span className="patient-title-mobile">{item.patient_name}</span>
-                  <span
-                    className="status-badge"
-                    style={{
-                      backgroundColor: item.status === "Completed" ? "#dcfce7" : "#fef9c3",
-                      color: item.status === "Completed" ? "#15803d" : "#a16207",
-                    }}
-                  >
+                  <span className={`status-badge ${isCompleted ? "status-completed" : "status-pending"}`}>
                     {item.status}
                   </span>
                 </div>
@@ -544,25 +254,15 @@ export default function Laboratory() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Add / Edit Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-card">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "1rem",
-              }}
-            >
-              <h2 style={{ fontSize: "1.125rem", fontWeight: "bold", margin: 0, color: "#0f172a" }}>
+            <div className="modal-header">
+              <h2 className="modal-title">
                 {editingId ? "Edit Lab Record" : "New Lab Record"}
               </h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                style={{ border: "none", background: "none", cursor: "pointer", color: "#64748b" }}
-              >
+              <button onClick={() => setIsModalOpen(false)} className="modal-close-btn">
                 <X size={20} />
               </button>
             </div>
@@ -614,42 +314,15 @@ export default function Laboratory() {
                   setFormData({ ...formData, date: e.target.value })
                 }
               />
-              <div
-                className="modal-actions-container"
-                style={{
-                  gridColumn: "span 2",
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "0.5rem",
-                  marginTop: "1rem",
-                }}
-              >
+              <div className="modal-actions-container">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    padding: "0.5rem 1rem",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "0.375rem",
-                    background: "#fff",
-                    cursor: "pointer",
-                    fontWeight: "500",
-                  }}
+                  className="btn-modal-cancel"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  style={{
-                    padding: "0.5rem 1rem",
-                    backgroundColor: "#9333ea",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "0.375rem",
-                    cursor: "pointer",
-                    fontWeight: "600",
-                  }}
-                >
+                <button type="submit" className="btn-modal-submit">
                   {editingId ? "Update Record" : "Save Record"}
                 </button>
               </div>

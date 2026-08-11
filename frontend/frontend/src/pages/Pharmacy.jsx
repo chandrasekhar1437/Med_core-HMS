@@ -207,7 +207,7 @@ export default function Pharmacy() {
       </div>
 
       <h3>Stock Directory</h3>
-      
+
       {loading ? (
         <div className="no-data">Loading inventory...</div>
       ) : medicines.length === 0 ? (
@@ -230,7 +230,7 @@ export default function Pharmacy() {
               <tbody>
                 {medicines.map((med) => {
                   const medId = med.id || med._id;
-                  const isLowStock = med.stock_quantity < 10;
+                  const isLowStock = Number(med.stock_quantity) < 10;
                   return (
                     <tr key={medId}>
                       <td>
@@ -243,7 +243,7 @@ export default function Pharmacy() {
                           {med.stock_quantity} units
                         </span>
                       </td>
-                      <td>${Number(med.unit_price).toFixed(2)}</td>
+                      <td>${Number(med.unit_price || 0).toFixed(2)}</td>
                       <td>
                         <button className="btn btn-edit" onClick={() => handleEditClick(med)}>
                           Edit
@@ -263,7 +263,7 @@ export default function Pharmacy() {
           <div className="mobile-pharmacy-list">
             {medicines.map((med) => {
               const medId = med.id || med._id;
-              const isLowStock = med.stock_quantity < 10;
+              const isLowStock = Number(med.stock_quantity) < 10;
               return (
                 <div key={medId} className="mobile-pharmacy-card">
                   <div className="mobile-card-header">
@@ -275,7 +275,7 @@ export default function Pharmacy() {
                   <div className="mobile-card-body">
                     <div><strong>Category:</strong> {med.category}</div>
                     <div><strong>Dosage:</strong> {med.dosage}</div>
-                    <div><strong>Price:</strong> ${Number(med.unit_price).toFixed(2)}</div>
+                    <div><strong>Price:</strong> ${Number(med.unit_price || 0).toFixed(2)}</div>
                   </div>
                   <div className="mobile-card-actions">
                     <button className="btn btn-edit" onClick={() => handleEditClick(med)}>

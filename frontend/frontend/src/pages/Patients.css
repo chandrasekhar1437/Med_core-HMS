@@ -1,5 +1,4 @@
-/* Container & Layout */
-.appointments-container {
+.patients-container {
   padding: 30px;
   max-width: 950px;
   margin: 30px auto;
@@ -10,26 +9,37 @@
   box-sizing: border-box;
 }
 
-.appointments-header {
+.patients-header-title {
   color: #2c3e50;
   margin-bottom: 20px;
   border-bottom: 2px solid #eaeaea;
   padding-bottom: 10px;
-  font-size: 1.8rem;
 }
 
-.error-message {
+.patients-sub-header {
+  color: #34495e;
+  margin-top: 30px;
+  margin-bottom: 15px;
+}
+
+.patients-loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 18px;
+  color: #7f8c8d;
+}
+
+.patients-error-banner {
   background-color: #f8d7da;
   color: #721c24;
   padding: 12px;
   border-radius: 4px;
   margin-bottom: 20px;
   border: 1px solid #f5c6cb;
-  font-size: 14px;
 }
 
 /* Form Styles */
-.appointment-card-form {
+.patients-form-card {
   background-color: #f8f9fa;
   padding: 20px;
   border-radius: 6px;
@@ -37,26 +47,24 @@
   margin-bottom: 25px;
 }
 
-.form-title {
+.patients-form-title {
   margin-top: 0;
   margin-bottom: 15px;
   color: #495057;
   font-size: 18px;
 }
 
-.form-grid {
+.patient-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 15px;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
+.patients-input-group {
   margin-bottom: 15px;
 }
 
-.form-group label {
+.patients-label {
   display: block;
   margin-bottom: 5px;
   font-weight: 600;
@@ -64,8 +72,7 @@
   font-size: 14px;
 }
 
-.form-group input,
-.form-group select {
+.patients-input {
   width: 100%;
   padding: 10px;
   border-radius: 4px;
@@ -75,139 +82,106 @@
   background-color: #ffffff;
 }
 
-.form-actions {
+.patient-btn-group {
   display: flex;
   gap: 10px;
   margin-top: 10px;
 }
 
-/* Button Classes */
-.btn {
+.patients-primary-button {
+  padding: 10px 18px;
+  background-color: #007bff;
+  color: #ffffff;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
-  transition: background-color 0.2s ease;
 }
 
-.btn-primary {
-  padding: 10px 18px;
-  background-color: #0284c7;
-  color: #ffffff;
-}
-
-.btn-primary:hover {
-  background-color: #0369a1;
-}
-
-.btn-secondary {
+.patients-secondary-button {
   padding: 10px 18px;
   background-color: #6c757d;
   color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
 }
 
-.btn-secondary:hover {
-  background-color: #5a6268;
-}
-
-.btn-edit {
-  padding: 6px 12px;
-  background-color: #ffc107;
-  color: #212529;
-  margin-right: 6px;
-  font-size: 13px;
-}
-
-.btn-edit:hover {
-  background-color: #e0a800;
-}
-
-.btn-delete {
-  padding: 6px 12px;
-  background-color: #dc3545;
-  color: #ffffff;
-  font-size: 13px;
-}
-
-.btn-delete:hover {
-  background-color: #c82333;
-}
-
-/* Table Styles */
-.table-container {
+/* Desktop Table View */
+.desktop-table-wrapper {
   overflow-x: auto;
 }
 
-.appointments-table {
+.patients-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   font-size: 14px;
 }
 
-.appointments-table th {
+.patients-table-header-row {
   background-color: #343a40;
   color: #ffffff;
+}
+
+.patients-table th {
   padding: 12px;
   border-bottom: 2px solid #dee2e6;
 }
 
-.appointments-table td {
+.patients-table td {
   padding: 12px;
   border-bottom: 1px solid #dee2e6;
-  color: #1e293b;
 }
 
-.appointments-table tr:nth-child(even) {
+.patients-tr-even {
   background-color: #fdfdfd;
 }
 
-.appointments-table tr:nth-child(odd) {
+.patients-tr-odd {
   background-color: #f8f9fa;
 }
 
-/* Badges */
-.badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  display: inline-block;
+.patients-edit-button {
+  padding: 6px 12px;
+  background-color: #ffc107;
+  color: #212529;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-right: 6px;
+  font-weight: 600;
+  font-size: 13px;
 }
 
-.badge-scheduled {
-  background-color: #e0f2fe;
-  color: #0369a1;
+.patients-delete-button {
+  padding: 6px 12px;
+  background-color: #dc3545;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
 }
 
-.badge-completed {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.badge-cancelled {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.no-data {
-  text-align: center;
-  padding: 30px;
+.patients-no-data {
   color: #6c757d;
   font-style: italic;
 }
 
-/* Mobile Responsive View */
-.mobile-cards-container {
+/* Mobile Card View */
+.mobile-patients-list {
   display: none;
   flex-direction: column;
   gap: 12px;
   margin-top: 15px;
 }
 
-.appointment-mobile-card {
+.patient-card-mobile {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -215,7 +189,7 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.mobile-card-header {
+.mobile-patient-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -224,23 +198,28 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
-.patient-title {
+.mobile-patient-name {
   font-weight: 700;
   color: #0f172a;
   font-size: 16px;
 }
 
-.mobile-card-body {
+.gender-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.mobile-patient-body {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 14px;
   color: #475569;
   margin-bottom: 12px;
-}
-
-.mobile-card-body p {
-  margin: 0;
 }
 
 .mobile-card-actions {
@@ -250,34 +229,34 @@
 
 .mobile-card-actions button {
   flex: 1;
+  padding: 8px;
   text-align: center;
 }
 
-/* Media Queries */
 @media (max-width: 768px) {
-  .appointments-container {
+  .patients-container {
     padding: 16px;
     margin: 10px auto;
   }
 
-  .form-grid {
+  .patient-form-grid {
     grid-template-columns: 1fr;
     gap: 0;
   }
 
-  .form-actions {
+  .patient-btn-group {
     flex-direction: column;
   }
 
-  .form-actions button {
+  .patient-btn-group button {
     width: 100%;
   }
 
-  .table-container {
+  .desktop-table-wrapper {
     display: none;
   }
 
-  .mobile-cards-container {
+  .mobile-patients-list {
     display: flex;
   }
 }

@@ -1,5 +1,5 @@
-/* Container & Layout */
-.appointments-container {
+/* Main Layout & Container */
+.pharmacy-container {
   padding: 30px;
   max-width: 950px;
   margin: 30px auto;
@@ -10,7 +10,7 @@
   box-sizing: border-box;
 }
 
-.appointments-header {
+.pharmacy-header {
   color: #2c3e50;
   margin-bottom: 20px;
   border-bottom: 2px solid #eaeaea;
@@ -28,8 +28,8 @@
   font-size: 14px;
 }
 
-/* Form Styles */
-.appointment-card-form {
+/* Card Form Layout */
+.pharmacy-card-form {
   background-color: #f8f9fa;
   padding: 20px;
   border-radius: 6px;
@@ -46,7 +46,7 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
 }
 
@@ -134,41 +134,41 @@
   background-color: #c82333;
 }
 
-/* Table Styles */
+/* Desktop Table View */
 .table-container {
   overflow-x: auto;
 }
 
-.appointments-table {
+.pharmacy-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   font-size: 14px;
 }
 
-.appointments-table th {
+.pharmacy-table th {
   background-color: #343a40;
   color: #ffffff;
   padding: 12px;
   border-bottom: 2px solid #dee2e6;
 }
 
-.appointments-table td {
+.pharmacy-table td {
   padding: 12px;
   border-bottom: 1px solid #dee2e6;
   color: #1e293b;
 }
 
-.appointments-table tr:nth-child(even) {
+.pharmacy-table tr:nth-child(even) {
   background-color: #fdfdfd;
 }
 
-.appointments-table tr:nth-child(odd) {
+.pharmacy-table tr:nth-child(odd) {
   background-color: #f8f9fa;
 }
 
-/* Badges */
-.badge {
+/* Stock Status Badges */
+.badge-stock {
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -177,17 +177,12 @@
   display: inline-block;
 }
 
-.badge-scheduled {
-  background-color: #e0f2fe;
-  color: #0369a1;
-}
-
-.badge-completed {
+.stock-in {
   background-color: #dcfce7;
   color: #166534;
 }
 
-.badge-cancelled {
+.stock-low {
   background-color: #fee2e2;
   color: #991b1b;
 }
@@ -199,15 +194,15 @@
   font-style: italic;
 }
 
-/* Mobile Responsive View */
-.mobile-cards-container {
+/* Mobile Cards View */
+.mobile-pharmacy-list {
   display: none;
   flex-direction: column;
   gap: 12px;
   margin-top: 15px;
 }
 
-.appointment-mobile-card {
+.mobile-pharmacy-card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -224,7 +219,7 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
-.patient-title {
+.mobile-med-name {
   font-weight: 700;
   color: #0f172a;
   font-size: 16px;
@@ -239,10 +234,6 @@
   margin-bottom: 12px;
 }
 
-.mobile-card-body p {
-  margin: 0;
-}
-
 .mobile-card-actions {
   display: flex;
   gap: 8px;
@@ -253,9 +244,9 @@
   text-align: center;
 }
 
-/* Media Queries */
+/* Responsive Rules */
 @media (max-width: 768px) {
-  .appointments-container {
+  .pharmacy-container {
     padding: 16px;
     margin: 10px auto;
   }
@@ -273,11 +264,11 @@
     width: 100%;
   }
 
-  .table-container {
+  .desktop-table-wrapper {
     display: none;
   }
 
-  .mobile-cards-container {
+  .mobile-pharmacy-list {
     display: flex;
   }
 }

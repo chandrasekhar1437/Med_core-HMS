@@ -13,6 +13,7 @@ export default function Billing() {
 
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isUpiModalOpen, setIsUpiModalOpen] = useState(false);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -149,6 +150,7 @@ export default function Billing() {
       alert("Failed to delete invoice.");
     }
   };
+
   const handleOpenEdit = (invoice) => {
     setSelectedInvoice(invoice);
     setEditForm({
@@ -208,7 +210,6 @@ export default function Billing() {
       );
     }
   };
-
   const totalRevenue = filteredInvoices
     .filter((inv) => inv.status?.toLowerCase() === "paid")
     .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
@@ -281,74 +282,146 @@ export default function Billing() {
         ) : filteredInvoices.length === 0 ? (
           <p className={styles.message}>No billing records found.</p>
         ) : (
-          <div className={styles.tableResponsive}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Invoice ID</th>
-                  <th>Patient</th>
-                  <th>Doctor</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Due Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInvoices.map((inv) => {
-                  const invId = inv.id || inv._id;
-                  const statusKey = inv.status?.toLowerCase() || "pending";
-                  return (
-                    <tr key={invId}>
-                      <td className={styles.invoiceId}>
-                        #{invId ? String(invId).slice(-6) : "N/A"}
-                      </td>
-                      <td>{inv.patient_name || "N/A"}</td>
-                      <td className={styles.textMuted}>
-                        {inv.doctor_name || "N/A"}
-                      </td>
-                      <td className={styles.amountText}>
-                        ${Number(inv.amount || 0).toFixed(2)}
-                      </td>
-                      <td>
-                        <span
-                          className={`${styles.badge} ${styles[statusKey]}`}
-                        >
-                          {inv.status?.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className={styles.textMuted}>{inv.due_date || "N/A"}</td>
-                      <td>
-                        <div className={styles.actionGroup}>
-                          <button
-                            className={styles.viewBtn}
-                            onClick={() => {
-                              setSelectedInvoice(inv);
-                              setIsPreviewOpen(true);
-                            }}
+          <>
+            {/* Desktop Table View */}
+            <div className={styles.tableResponsive}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Invoice ID</th>
+                    <th>Patient</th>
+                    <th>Doctor</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Due Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredInvoices.map((inv) => {
+                    const invId = inv.id || inv._id;
+                    const statusKey = inv.status?.toLowerCase() || "pending";
+                    return (
+                      <tr key={invId}>
+                        <td className={styles.invoiceId}>
+                          #{invId ? String(invId).slice(-6) : "N/A"}
+                        </td>
+                        <td>{inv.patient_name || "N/A"}</td>
+                        <td className={styles.textMuted}>
+                          {inv.doctor_name || "N/A"}
+                        </td>
+                        <td className={styles.amountText}>
+                          ${Number(inv.amount || 0).toFixed(2)}
+                        </td>
+                        <td>
+                          <span
+                            className={`${styles.badge} ${styles[statusKey]}`}
                           >
-                            View
-                          </button>
-                          <button
-                            className={styles.editBtn}
-                            onClick={() => handleOpenEdit(inv)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className={styles.deleteBtn}
-                            onClick={() => handleDelete(invId)}
-                          >
-                            Delete
-                          </button>
+                            {inv.status?.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className={styles.textMuted}>{inv.due_date || "N/A"}</td>
+                        <td>
+                          <div className={styles.actionGroup}>
+                            <button
+                              className={styles.viewBtn}
+                              onClick={() => {
+                                setSelectedInvoice(inv);
+                                setIsPreviewOpen(true);
+                              }}
+                            >
+                              View
+                            </button>
+                            <button
+                              className={styles.upiBtn}
+                              onClick={() => {
+                                setSelectedInvoice(inv);
+                                setIsUpiModalOpen(true);
+                              }}
+                            >
+                              UPI Pay
+                            </button>
+                            <button
+                              className={styles.editBtn}
+                              onClick={() => handleOpenEdit(inv)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className={styles.deleteBtn}
+                              onClick={() => handleDelete(invId)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View */}
+            <div className={styles.mobileCardList}>
+              {filteredInvoices.map((inv) => {
+                const invId = inv.id || inv._id;
+                const statusKey = inv.status?.toLowerCase() || "pending";
+                return (
+                  <div key={invId} className={styles.mobileCard}>
+                    <div className={styles.mobileCardHeader}>
+                      <div>
+                        <strong>{inv.patient_name || "N/A"}</strong>
+                        <div className={styles.previewMeta}>
+                          #{invId ? String(invId).slice(-6) : "N/A"}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                      <span className={`${styles.badge} ${styles[statusKey]}`}>
+                        {inv.status?.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className={styles.mobileCardBody}>
+                      <div><strong>Doctor:</strong> {inv.doctor_name || "N/A"}</div>
+                      <div><strong>Amount:</strong> ${Number(inv.amount || 0).toFixed(2)}</div>
+                      <div><strong>Due Date:</strong> {inv.due_date || "N/A"}</div>
+                    </div>
+                    <div className={styles.mobileCardActions}>
+                      <button
+                        className={styles.viewBtn}
+                        onClick={() => {
+                          setSelectedInvoice(inv);
+                          setIsPreviewOpen(true);
+                        }}
+                      >
+                        View
+                      </button>
+                      <button
+                        className={styles.upiBtn}
+                        onClick={() => {
+                          setSelectedInvoice(inv);
+                          setIsUpiModalOpen(true);
+                        }}
+                      >
+                        UPI Pay
+                      </button>
+                      <button
+                        className={styles.editBtn}
+                        onClick={() => handleOpenEdit(inv)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() => handleDelete(invId)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
@@ -554,14 +627,16 @@ export default function Billing() {
                   </span>
                 </div>
               </div>
+
               <div className={styles.previewInfoBox}>
                 <p className={styles.previewInfoText}>
                   <strong>Patient:</strong> {selectedInvoice.patient_name}
                 </p>
                 <p className={styles.previewInfoText}>
-                  <strong>Doctor:</strong> {selectedInvoice.doctor_name}
+                  <strong>Doctor:</strong> {selectedInvoice.doctor_name || "N/A"}
                 </p>
               </div>
+
               <table className={styles.previewTable}>
                 <thead>
                   <tr>
@@ -578,18 +653,79 @@ export default function Billing() {
                   </tr>
                 </tbody>
               </table>
+
               <div className={styles.previewTotalRow}>
-                <h3 className={styles.previewTotalText}>
-                  Total: ${Number(selectedInvoice.amount || 0).toFixed(2)}
-                </h3>
+                <span>Total Payable:</span>
+                <strong>
+                  ${Number(selectedInvoice.amount || 0).toFixed(2)}
+                </strong>
               </div>
             </div>
-            <div className={styles.previewFooter}>
+
+            <div className={styles.modalActions}>
               <button
-                className={styles.downloadPdfBtn}
+                className={styles.exportButton}
                 onClick={() => handleExportPDF(selectedInvoice)}
               >
                 Download PDF
+              </button>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setIsPreviewOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPI QR Payment Modal */}
+      {isUpiModalOpen && selectedInvoice && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.previewHeader}>
+              <h3 className={styles.modalTitle}>UPI Payment QR Code</h3>
+              <button
+                className={styles.closeIconBtn}
+                onClick={() => setIsUpiModalOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className={styles.upiBody}>
+              <p className={styles.previewMeta}>
+                Scan using Google Pay, PhonePe, or Paytm
+              </p>
+              <div className={styles.qrWrapper}>
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                    `upi://pay?pa=medcorehospital@upi&pn=MedCore%20HMS&am=${
+                      selectedInvoice.amount || 0
+                    }&cu=INR`
+                  )}`}
+                  alt="UPI QR Code"
+                />
+              </div>
+              <div className={styles.previewInfoBox}>
+                <p className={styles.previewInfoText}>
+                  <strong>Patient:</strong> {selectedInvoice.patient_name}
+                </p>
+                <p className={styles.previewInfoText}>
+                  <strong>Amount:</strong> $
+                  {Number(selectedInvoice.amount || 0).toFixed(2)}
+                </p>
+                <p className={styles.previewInfoText}>
+                  <strong>VPA:</strong> <code>medcorehospital@upi</code>
+                </p>
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setIsUpiModalOpen(false)}
+              >
+                Close
               </button>
             </div>
           </div>

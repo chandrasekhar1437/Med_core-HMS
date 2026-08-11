@@ -1,20 +1,20 @@
-/* Base Layout */
+/* Layout & Grid Container */
 .dashboard-layout {
   display: flex;
   min-height: 100vh;
   background-color: #f8fafc;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  position: relative;
+  color: #0f172a;
 }
 
-/* Mobile Header (Hidden on Desktop) */
+/* Mobile Header */
 .mobile-header {
   display: none;
   justify-content: space-between;
   align-items: center;
-  background-color: #1e293b;
+  padding: 12px 16px;
+  background-color: #0f172a;
   color: #ffffff;
-  padding: 12px 20px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -27,17 +27,18 @@
 }
 
 .mobile-brand h2 {
-  margin: 0;
   font-size: 1.1rem;
-  color: #38bdf8;
+  margin: 0;
+  color: #ffffff;
 }
 
 .role-badge {
-  font-size: 0.75rem;
   background-color: #0284c7;
   color: #ffffff;
+  font-size: 0.7rem;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: 12px;
+  font-weight: 600;
   text-transform: capitalize;
 }
 
@@ -47,30 +48,36 @@
   color: #ffffff;
   font-size: 1.5rem;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 0 4px;
 }
 
-/* Sidebar Styling */
+/* Sidebar Navigation */
 .sidebar {
   width: 260px;
-  background-color: #1e293b;
-  color: #ffffff;
+  background-color: #0f172a;
+  color: #f8fafc;
   display: flex;
   flex-direction: column;
-  padding: 24px;
+  padding: 24px 16px;
   box-sizing: border-box;
   flex-shrink: 0;
   transition: transform 0.3s ease;
 }
 
+.sidebar-brand {
+  margin-bottom: 28px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1e293b;
+}
+
 .sidebar-brand h2 {
-  margin: 0 0 4px 0;
   font-size: 1.4rem;
+  margin: 0 0 4px 0;
   color: #38bdf8;
 }
 
 .role-subtitle {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #94a3b8;
   text-transform: capitalize;
 }
@@ -78,8 +85,8 @@
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 32px;
+  gap: 6px;
+  height: 100%;
 }
 
 .sidebar-nav a {
@@ -87,40 +94,50 @@
   text-decoration: none;
   padding: 10px 14px;
   border-radius: 6px;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .sidebar-nav a:hover,
 .sidebar-nav a.active {
-  background-color: #0284c7;
-  color: #ffffff;
+  background-color: #1e293b;
+  color: #38bdf8;
 }
 
 .logout-btn {
-  margin-top: 24px;
+  margin-top: auto;
   background-color: #ef4444;
   color: #ffffff;
   border: none;
-  padding: 10px;
+  padding: 10px 14px;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
+  text-align: left;
+  font-size: 0.9rem;
   transition: background-color 0.2s ease;
-  text-align: center;
 }
 
 .logout-btn:hover {
   background-color: #dc2626;
 }
 
-/* Main Content Styling */
+/* Sidebar Overlay */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  z-index: 80;
+}
+
+/* Main Content Area */
 .main-content {
   flex: 1;
   padding: 32px;
-  box-sizing: border-box;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .content-header {
@@ -133,14 +150,14 @@
 }
 
 .content-header h1 {
-  margin: 0 0 4px 0;
   font-size: 1.8rem;
+  margin: 0 0 4px 0;
   color: #0f172a;
 }
 
 .content-header p {
-  margin: 0;
   color: #64748b;
+  margin: 0;
   font-size: 0.95rem;
 }
 
@@ -148,11 +165,11 @@
   background-color: #0284c7;
   color: #ffffff;
   border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: 6px;
   font-weight: 600;
-  font-size: 0.95rem;
   cursor: pointer;
+  font-size: 0.9rem;
   transition: background-color 0.2s ease;
 }
 
@@ -160,17 +177,17 @@
   background-color: #0369a1;
 }
 
-/* Cards Grid */
+/* Dashboard Grid Cards */
 .dashboard-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
 }
 
 .card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 24px;
   cursor: pointer;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -178,14 +195,14 @@
 }
 
 .card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
   border-color: #38bdf8;
 }
 
 .card h3 {
   margin: 0 0 8px 0;
-  color: #1e293b;
+  color: #0f172a;
   font-size: 1.15rem;
 }
 
@@ -196,11 +213,7 @@
   line-height: 1.4;
 }
 
-/* Mobile Responsiveness Overrides */
-.sidebar-overlay {
-  display: none;
-}
-
+/* Mobile Responsive Breakpoints */
 @media (max-width: 768px) {
   .dashboard-layout {
     flex-direction: column;
@@ -215,9 +228,9 @@
     top: 0;
     left: 0;
     bottom: 0;
-    z-index: 200;
+    z-index: 90;
     transform: translateX(-100%);
-    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+    width: 280px;
   }
 
   .sidebar.mobile-open {
@@ -226,15 +239,10 @@
 
   .sidebar-overlay {
     display: block;
-    position: fixed;
-    inset: 0;
-    background-color: rgba(15, 23, 42, 0.6);
-    z-index: 150;
-    backdrop-filter: blur(2px);
   }
 
   .main-content {
-    padding: 20px 16px;
+    padding: 16px;
   }
 
   .content-header {
@@ -244,5 +252,6 @@
 
   .primary-btn {
     width: 100%;
+    text-align: center;
   }
 }
