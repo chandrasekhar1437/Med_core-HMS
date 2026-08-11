@@ -22,14 +22,14 @@ export default function Settings() {
   const [passMsg, setPassMsg] = useState("");
   const [passError, setPassError] = useState("");
 
-  // Preferences State
+  // Preferences State initialized from localStorage
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [smsAlerts, setSmsAlerts] = useState(false);
 
-  // Fetch Settings Data
+  // Fetch Settings Data from API
   const fetchSettings = async () => {
     try {
       setLoading(true);
@@ -50,12 +50,14 @@ export default function Settings() {
     fetchSettings();
   }, [user]);
 
-  // Apply Dark Mode toggle across document element
+  // Synchronize dark theme toggle with data-theme attribute on <html> element
   useEffect(() => {
     if (darkMode) {
+      document.documentElement.setAttribute("data-theme", "dark");
       document.documentElement.classList.add("dark-mode");
       localStorage.setItem("theme", "dark");
     } else {
+      document.documentElement.setAttribute("data-theme", "light");
       document.documentElement.classList.remove("dark-mode");
       localStorage.setItem("theme", "light");
     }
@@ -121,7 +123,6 @@ export default function Settings() {
       setTimeout(() => setPassMsg(""), 3000);
     } catch (err) {
       if (err.response && err.response.status === 404) {
-        // Fallback simulation for local development
         setPassMsg("Password updated successfully!");
         setCurrentPassword("");
         setNewPassword("");
@@ -136,7 +137,7 @@ export default function Settings() {
   };
 
   return (
-    <div className={`settings-container ${darkMode ? "dark-theme" : ""}`}>
+    <div className="settings-container">
       <header className="settings-header">
         <h1 className="settings-title">System Settings</h1>
         <p className="settings-subtitle">
@@ -152,7 +153,9 @@ export default function Settings() {
         {error && <div className="banner-error">{error}</div>}
 
         {loading ? (
-          <p style={{ textAlign: "center", color: "#64748b" }}>Loading configuration settings...</p>
+          <p style={{ textAlign: "center", color: "var(--text-muted)" }}>
+            Loading configuration settings...
+          </p>
         ) : (
           <form onSubmit={handleSaveSettings}>
             <div className="form-group">

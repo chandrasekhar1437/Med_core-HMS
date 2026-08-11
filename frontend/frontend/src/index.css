@@ -1,12 +1,13 @@
 ﻿/* ==========================================================================
-   1. Design Tokens & Light Palette (Default)
+   1. Design Tokens & Base Light Palette
    ========================================================================== */
 :root {
-  /* Colors */
+  /* Primary & Accent Colors */
   --primary: #0284c7;
   --primary-hover: #0369a1;
   --primary-light: #e0f2fe;
 
+  /* State & Alert Colors */
   --danger: #dc2626;
   --danger-hover: #b91c1c;
   --danger-bg: #fee2e2;
@@ -18,34 +19,39 @@
   --warning: #ca8a04;
   --warning-bg: #fef9c3;
 
+  /* Background Colors (Light Theme Baseline) */
   --bg-app: #f8fafc;
   --bg-card: #ffffff;
   --bg-alt: #f1f5f9;
 
+  /* Typography Colors */
   --text-main: #1e293b;
   --text-muted: #64748b;
   --text-light: #94a3b8;
   --text-dark: #334155;
 
+  /* Borders & Dividers */
   --border-color: #e2e8f0;
   --border-input: #cbd5e1;
 
-  /* Layout Tokens */
-  --font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --sidebar-width: 260px;
+  /* Structural & Layout Variables */
+  --font-family: "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  --sidebar-width: 250px;
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-full: 9999px;
+
+  /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
   --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 /* ==========================================================================
-   2. Dark Theme Variables Block
+   2. Dark Theme Variables Block (Automated & Data Attribute)
    ========================================================================== */
 
-/* Automated System Preferences (when user hasn't explicitly set data-theme="light") */
+/* Automated System Preference Fallback */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg-app: #0f172a;
@@ -75,7 +81,8 @@
   }
 }
 
-/* Explicit Manual Toggle (Data Attribute on <html> or <body>) */
+/* Explicit Dark Theme Toggle Triggered by Settings.jsx */
+html.dark-mode,
 [data-theme="dark"] {
   --bg-app: #0f172a;
   --bg-card: #1e293b;
@@ -103,7 +110,7 @@
   --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
-/* Force light theme override */
+/* Explicit Light Theme Override */
 [data-theme="light"] {
   --bg-app: #f8fafc;
   --bg-card: #ffffff;
@@ -123,7 +130,7 @@
 }
 
 /* ==========================================================================
-   3. Global Resets & Base Styles
+   3. Global CSS Resets & Base Element Defaults
    ========================================================================== */
 *,
 *::before,
@@ -153,7 +160,24 @@ body {
 }
 
 /* ==========================================================================
-   4. Utility Classes & Typography
+   4. Application Shell Layout (`App.jsx` Container Styles)
+   ========================================================================== */
+.app-shell-root {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-app);
+}
+
+.app-main-content {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  min-height: 100vh;
+  box-sizing: border-box;
+  transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+/* ==========================================================================
+   5. Utility Classes & Reusable Controls
    ========================================================================== */
 h1, h2, h3, h4, h5, h6 {
   color: var(--text-main);
@@ -174,7 +198,7 @@ a:hover {
   color: var(--primary-hover);
 }
 
-/* Responsive Table Wrappers */
+/* Responsive Table Wrapper Defaults */
 .table-wrapper,
 .table-container,
 .desktop-table-wrapper {
@@ -186,7 +210,7 @@ a:hover {
   border-radius: var(--radius-md);
 }
 
-/* Form Controls Resets */
+/* Form Controls Styling */
 input, select, textarea {
   background-color: var(--bg-card);
   color: var(--text-main);
@@ -194,7 +218,8 @@ input, select, textarea {
   border-radius: var(--radius-sm);
   padding: 10px 12px;
   outline: none;
-  transition: border-color 0.2s ease;
+  font-family: var(--font-family);
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -210,25 +235,17 @@ button {
 }
 
 /* ==========================================================================
-   5. Mobile Responsiveness Overrides (Screens <= 768px)
+   6. Mobile Responsiveness Overrides (Screens <= 768px)
    ========================================================================== */
 @media (max-width: 768px) {
-  main,
-  .main-content,
-  .page-content,
-  .layout-main-content {
-    margin-left: 0 !important;
-    padding-top: 60px !important;
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-    padding-bottom: 24px !important;
-    width: 100% !important;
+  .app-shell-root {
+    flex-direction: column !important;
   }
 
-  .app-shell,
-  .dashboard-layout,
-  .layout-root {
-    flex-direction: column !important;
+  .app-main-content {
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding-top: 60px !important;
   }
 
   h1, .page-title {
@@ -239,8 +256,6 @@ button {
     font-size: 1.25rem !important;
   }
 
-  .grid-2,
-  .grid-3,
   .form-grid {
     grid-template-columns: 1fr !important;
   }

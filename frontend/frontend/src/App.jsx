@@ -1,4 +1,4 @@
-﻿import React from "react";
+﻿import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Login from "./pages/Login";
@@ -20,7 +20,7 @@ function ProtectedRoute() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "50px", fontSize: "18px", color: "#64748b" }}>
+      <div style={{ textAlign: "center", padding: "50px", fontSize: "18px", color: "var(--text-muted)" }}>
         Loading session...
       </div>
     );
@@ -34,7 +34,7 @@ function PublicOnlyRoute() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: "center", padding: "50px", fontSize: "18px", color: "#64748b" }}>
+      <div style={{ textAlign: "center", padding: "50px", fontSize: "18px", color: "var(--text-muted)" }}>
         Loading session...
       </div>
     );
@@ -47,36 +47,7 @@ function PublicOnlyRoute() {
 function MainLayout() {
   return (
     <div className="app-shell-root">
-      <style>{`
-        .app-shell-root {
-          display: flex;
-          min-height: 100vh;
-          background-color: #f8fafc;
-        }
-
-        .app-main-content {
-          margin-left: 250px;
-          width: calc(100% - 250px);
-          min-height: 100vh;
-          box-sizing: border-box;
-          transition: margin-left 0.3s ease, width 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-          .app-shell-root {
-            flex-direction: column;
-          }
-
-          .app-main-content {
-            margin-left: 0 !important;
-            width: 100% !important;
-            padding-top: 60px; /* Leave room for fixed mobile top header */
-          }
-        }
-      `}</style>
-
       <Sidebar />
-
       <main className="app-main-content">
         <Outlet />
       </main>
@@ -85,6 +56,18 @@ function MainLayout() {
 }
 
 export default function App() {
+  // Synchronize saved dark theme preferences on app initialization
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
+      document.documentElement.classList.add("dark-mode");
+    } else {
+      document.documentElement.setAttribute("data-theme", "light");
+      document.documentElement.classList.remove("dark-mode");
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
