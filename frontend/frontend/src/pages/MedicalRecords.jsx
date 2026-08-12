@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from "react";
 import API from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import "./MedicalRecords.css";
 
 export default function MedicalRecords() {
+  const { user } = useAuth();
+  const role = (user?.role || "patient").toLowerCase();
+
   const [records, setRecords] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const [form, setForm] = useState({
     patient_id: "",
     diagnosis: "",
     prescription: "",
     notes: "",
   });
+
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,7 +49,12 @@ export default function MedicalRecords() {
     e.preventDefault();
     try {
       if (editingId) {
-        await API.patch(`/medical-records/${editingId}`, form);
+        try {
+          await API.patch(`/medical-records/${editingId}`, form);
+        } catch (patchErr) {
+          // Fallback to PUT if PATCH endpoint is not supported
+          await API.put(`/medical-records/${editingId}`, form);
+        }
         setEditingId(null);
       } else {
         await API.post("/medical-records/", form);
@@ -87,6 +98,13 @@ export default function MedicalRecords() {
     }
   };
 
+  const filteredRecords = records.filter(
+    (r) =>
+      r.patient_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.diagnosis?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.notes?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading && records.length === 0) {
     return <div className="med-loading">Loading medical records...</div>;
   }
@@ -97,84 +115,98 @@ export default function MedicalRecords() {
 
       {error && <div className="med-error-banner">{error}</div>}
 
-      <form onSubmit={handleSubmit} className="med-form-card">
-        <h3 className="med-form-title">
-          {editingId ? "Edit Medical Record" : "Add Medical Record"}
-        </h3>
+      {/* Form rendered only for authorized clinical staff / doctors / admins */}
+      {role !== "patient" && (
+        <form onSubmit={handleSubmit} className="med-form-card">
+          <h3 className="med-form-title">
+            {editingId ? "Edit Medical Record" : "Add Medical Record"}
+          </h3>
 
-        <div className="med-form-grid">
-          <div className="med-input-group">
-            <label className="med-label">Patient ID / Name:</label>
-            <input
-              type="text"
-              name="patient_id"
-              placeholder="e.g. PAT-101"
-              value={form.patient_id || ""}
-              onChange={handleInputChange}
-              required
-              className="med-input"
-            />
+          <div className="med-form-grid">
+            <div className="med-input-group">
+              <label className="med-label">Patient ID / Name:</label>
+              <input
+                type="text"
+                name="patient_id"
+                placeholder="e.g. PAT-101"
+                value={form.patient_id || ""}
+                onChange={handleInputChange}
+                required
+                className="med-input"
+              />
+            </div>
+
+            <div className="med-input-group">
+              <label className="med-label">Diagnosis:</label>
+              <input
+                type="text"
+                name="diagnosis"
+                placeholder="Primary Diagnosis"
+                value={form.diagnosis || ""}
+                onChange={handleInputChange}
+                required
+                className="med-input"
+              />
+            </div>
           </div>
 
-          <div className="med-input-group">
-            <label className="med-label">Diagnosis:</label>
-            <input
-              type="text"
-              name="diagnosis"
-              placeholder="Primary Diagnosis"
-              value={form.diagnosis || ""}
-              onChange={handleInputChange}
-              required
-              className="med-input"
-            />
-          </div>
-        </div>
+          <div className="med-form-grid">
+            <div className="med-input-group">
+              <label className="med-label">Prescription Details:</label>
+              <input
+                type="text"
+                name="prescription"
+                placeholder="Prescription details"
+                value={form.prescription || ""}
+                onChange={handleInputChange}
+                className="med-input"
+              />
+            </div>
 
-        <div className="med-form-grid">
-          <div className="med-input-group">
-            <label className="med-label">Prescription:</label>
-            <input
-              type="text"
-              name="prescription"
-              placeholder="Prescription details"
-              value={form.prescription || ""}
-              onChange={handleInputChange}
-              className="med-input"
-            />
+            <div className="med-input-group">
+              <label className="med-label">Clinical Notes:</label>
+              <input
+                type="text"
+                name="notes"
+                placeholder="Additional remarks or vital signs"
+                value={form.notes || ""}
+                onChange={handleInputChange}
+                className="med-input"
+              />
+            </div>
           </div>
 
-          <div className="med-input-group">
-            <label className="med-label">Clinical Notes:</label>
-            <input
-              type="text"
-              name="notes"
-              placeholder="Additional remarks"
-              value={form.notes || ""}
-              onChange={handleInputChange}
-              className="med-input"
-            />
-          </div>
-        </div>
-
-        <div className="med-btn-group">
-          <button type="submit" className="med-btn-primary">
-            {editingId ? "Update Record" : "Add Record"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              onClick={handleCancelEdit}
-              className="med-btn-secondary"
-            >
-              Cancel
+          <div className="med-btn-group">
+            <button type="submit" className="med-btn-primary">
+              {editingId ? "Update Record" : "Add Record"}
             </button>
-          )}
-        </div>
-      </form>
+            {editingId && (
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="med-btn-secondary"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </form>
+      )}
 
       <h3 className="med-sub-header">Existing Clinical Records</h3>
 
-      {records.length === 0 ? (
+      {/* Search Filter Bar */}
+      <div className="med-search-bar">
+        <input
+          type="text"
+          className="med-search-input"
+          placeholder="Search by Patient ID, Diagnosis, or Notes..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+
+      {filteredRecords.length === 0 ? (
         <p className="med-no-data">No medical records found.</p>
       ) : (
         <>
@@ -187,11 +219,11 @@ export default function MedicalRecords() {
                   <th>Diagnosis</th>
                   <th>Prescription</th>
                   <th>Notes</th>
-                  <th>Actions</th>
+                  {role !== "patient" && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
-                {records.map((record, index) => {
+                {filteredRecords.map((record, index) => {
                   const recordId = record.id || record._id;
                   return (
                     <tr
@@ -204,20 +236,22 @@ export default function MedicalRecords() {
                       <td>{record.diagnosis}</td>
                       <td>{record.prescription || "—"}</td>
                       <td>{record.notes || "—"}</td>
-                      <td>
-                        <button
-                          onClick={() => handleEditClick(record)}
-                          className="med-btn-edit"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(recordId)}
-                          className="med-btn-delete"
-                        >
-                          Delete
-                        </button>
-                      </td>
+                      {role !== "patient" && (
+                        <td>
+                          <button
+                            onClick={() => handleEditClick(record)}
+                            className="med-btn-edit"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(recordId)}
+                            className="med-btn-delete"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -227,7 +261,7 @@ export default function MedicalRecords() {
 
           {/* Mobile Card View */}
           <div className="mobile-records-list">
-            {records.map((record) => {
+            {filteredRecords.map((record) => {
               const recordId = record.id || record._id;
               return (
                 <div key={recordId} className="mobile-record-card">
@@ -247,20 +281,22 @@ export default function MedicalRecords() {
                       <strong>Notes:</strong> {record.notes || "—"}
                     </div>
                   </div>
-                  <div className="mobile-card-actions">
-                    <button
-                      onClick={() => handleEditClick(record)}
-                      className="med-btn-edit"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(recordId)}
-                      className="med-btn-delete"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  {role !== "patient" && (
+                    <div className="mobile-card-actions">
+                      <button
+                        onClick={() => handleEditClick(record)}
+                        className="med-btn-edit"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(recordId)}
+                        className="med-btn-delete"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -1,266 +1,328 @@
-/* Main Layout & Container */
-.pharmacy-container {
-  padding: 30px;
-  max-width: 950px;
-  margin: 30px auto;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+.prescriptions-container {
+  padding: 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  font-family: var(--font-family, "Segoe UI", Roboto, sans-serif);
   box-sizing: border-box;
+  color: var(--text-main, #1e293b);
 }
 
-.pharmacy-header {
-  color: #2c3e50;
+.rx-header-title {
+  font-size: 24px;
+  font-weight: 700;
   margin-bottom: 20px;
-  border-bottom: 2px solid #eaeaea;
+  color: var(--text-main, #1e293b);
+  border-bottom: 2px solid var(--border-color, #e2e8f0);
   padding-bottom: 10px;
-  font-size: 1.8rem;
 }
 
-.error-message {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  border: 1px solid #f5c6cb;
-  font-size: 14px;
-}
-
-/* Card Form Layout */
-.pharmacy-card-form {
-  background-color: #f8f9fa;
-  padding: 20px;
-  border-radius: 6px;
-  border: 1px solid #e9ecef;
-  margin-bottom: 25px;
-}
-
-.form-title {
-  margin-top: 0;
-  margin-bottom: 15px;
-  color: #495057;
+.rx-sub-header {
+  color: var(--text-main, #34495e);
+  margin-top: 28px;
+  margin-bottom: 16px;
   font-size: 18px;
 }
 
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
+.rx-loading {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+  color: var(--text-muted, #64748b);
 }
 
-.form-group {
+.rx-error-banner {
+  background-color: var(--danger-bg, #fee2e2);
+  color: var(--danger, #dc2626);
+  border: 1px solid var(--border-color, #fca5a5);
+  padding: 12px 16px;
+  border-radius: var(--radius-sm, 6px);
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* Form Styles */
+.rx-form-card {
+  background-color: var(--bg-card, #ffffff);
+  padding: 20px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--border-color, #e2e8f0);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  margin-bottom: 28px;
+}
+
+.rx-form-title {
+  margin-top: 0;
+  margin-bottom: 16px;
+  color: var(--text-main, #334155);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.rx-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rx-input-group {
   display: flex;
   flex-direction: column;
-  margin-bottom: 15px;
 }
 
-.form-group label {
+.rx-input-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.rx-label {
   display: block;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
   font-weight: 600;
-  color: #495057;
-  font-size: 14px;
+  color: var(--text-dark, #475569);
+  font-size: 13px;
 }
 
-.form-group input,
-.form-group select {
+.rx-input,
+.rx-select,
+.rx-textarea {
   width: 100%;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #ced4da;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--border-input, #cbd5e1);
   font-size: 14px;
   box-sizing: border-box;
-  background-color: #ffffff;
+  background-color: var(--bg-card, #ffffff);
+  color: var(--text-main, #0f172a);
+  outline: none;
+  font-family: var(--font-family, sans-serif);
 }
 
-.form-actions {
+.rx-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.rx-input:focus,
+.rx-select:focus,
+.rx-textarea:focus {
+  border-color: var(--primary, #0284c7);
+}
+
+.rx-btn-group {
   display: flex;
   gap: 10px;
   margin-top: 10px;
 }
 
-/* Button Classes */
-.btn {
+/* Filter & Search Bar */
+.rx-filter-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.rx-search-input {
+  flex: 1;
+  min-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-input, #cbd5e1);
+  border-radius: var(--radius-sm, 6px);
+  background-color: var(--bg-card, #ffffff);
+  color: var(--text-main, #0f172a);
+  font-size: 14px;
+}
+
+.rx-filter-select {
+  width: 180px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-input, #cbd5e1);
+  border-radius: var(--radius-sm, 6px);
+  background-color: var(--bg-card, #ffffff);
+  color: var(--text-main, #0f172a);
+  font-size: 14px;
+}
+
+/* Buttons */
+.rx-btn-primary {
+  padding: 10px 18px;
+  background-color: var(--primary, #0284c7);
+  color: #ffffff;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
-  transition: background-color 0.2s ease;
 }
 
-.btn-primary {
+.rx-btn-primary:hover {
+  background-color: var(--primary-hover, #0369a1);
+}
+
+.rx-btn-secondary {
   padding: 10px 18px;
-  background-color: #0284c7;
+  background-color: var(--text-muted, #64748b);
   color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
 }
 
-.btn-primary:hover {
-  background-color: #0369a1;
-}
-
-.btn-secondary {
-  padding: 10px 18px;
-  background-color: #6c757d;
-  color: #ffffff;
-}
-
-.btn-secondary:hover {
-  background-color: #5a6268;
-}
-
-.btn-edit {
+.rx-btn-edit {
   padding: 6px 12px;
-  background-color: #ffc107;
-  color: #212529;
+  background-color: var(--warning, #f59e0b);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
   margin-right: 6px;
+  font-weight: 600;
   font-size: 13px;
 }
 
-.btn-edit:hover {
-  background-color: #e0a800;
-}
-
-.btn-delete {
+.rx-btn-delete {
   padding: 6px 12px;
-  background-color: #dc3545;
+  background-color: var(--danger, #dc2626);
   color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  cursor: pointer;
+  font-weight: 600;
   font-size: 13px;
 }
 
-.btn-delete:hover {
-  background-color: #c82333;
+/* Status Badges */
+.rx-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 12px;
+  font-weight: 600;
 }
 
-/* Desktop Table View */
-.table-container {
+.rx-badge-active {
+  background-color: var(--success-bg, #dcfce7);
+  color: var(--success, #15803d);
+}
+
+.rx-badge-fulfilled {
+  background-color: var(--primary-light, #e0f2fe);
+  color: var(--primary-hover, #0369a1);
+}
+
+.rx-badge-cancelled {
+  background-color: var(--danger-bg, #fee2e2);
+  color: var(--danger, #b91c1c);
+}
+
+/* Desktop View Table */
+.desktop-table-wrapper {
   overflow-x: auto;
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
 }
 
-.pharmacy-table {
+.rx-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
   font-size: 14px;
 }
 
-.pharmacy-table th {
-  background-color: #343a40;
-  color: #ffffff;
-  padding: 12px;
-  border-bottom: 2px solid #dee2e6;
+.rx-table-header-row {
+  background-color: var(--bg-alt, #f1f5f9);
+  color: var(--text-dark, #343a40);
 }
 
-.pharmacy-table td {
-  padding: 12px;
-  border-bottom: 1px solid #dee2e6;
-  color: #1e293b;
+.rx-table th {
+  padding: 12px 16px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border-color, #dee2e6);
 }
 
-.pharmacy-table tr:nth-child(even) {
-  background-color: #fdfdfd;
+.rx-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color, #dee2e6);
+  color: var(--text-main, #1e293b);
 }
 
-.pharmacy-table tr:nth-child(odd) {
-  background-color: #f8f9fa;
+.rx-tr-even {
+  background-color: var(--bg-card, #ffffff);
 }
 
-/* Stock Status Badges */
-.badge-stock {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  display: inline-block;
+.rx-tr-odd {
+  background-color: var(--bg-alt, #f8f9fa);
 }
 
-.stock-in {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.stock-low {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.no-data {
-  text-align: center;
-  padding: 30px;
-  color: #6c757d;
-  font-style: italic;
-}
-
-/* Mobile Cards View */
-.mobile-pharmacy-list {
+/* Mobile View Cards */
+.mobile-rx-list {
   display: none;
   flex-direction: column;
   gap: 12px;
-  margin-top: 15px;
 }
 
-.mobile-pharmacy-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+.mobile-rx-card {
+  background-color: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: var(--radius-md, 8px);
   padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
 }
 
-.mobile-card-header {
+.mobile-rx-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color, #f1f5f9);
 }
 
-.mobile-med-name {
+.mobile-rx-patient {
   font-weight: 700;
-  color: #0f172a;
   font-size: 16px;
+  color: var(--text-main, #0f172a);
 }
 
-.mobile-card-body {
+.mobile-rx-body {
+  font-size: 14px;
+  color: var(--text-muted, #475569);
+  margin-bottom: 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 14px;
-  color: #475569;
-  margin-bottom: 12px;
 }
 
-.mobile-card-actions {
+.mobile-rx-actions {
   display: flex;
   gap: 8px;
 }
 
-.mobile-card-actions button {
+.mobile-rx-actions button {
   flex: 1;
   text-align: center;
 }
 
-/* Responsive Rules */
+.rx-no-data {
+  color: var(--text-muted, #6c757d);
+  font-style: italic;
+  padding: 16px 0;
+}
+
 @media (max-width: 768px) {
-  .pharmacy-container {
+  .prescriptions-container {
     padding: 16px;
-    margin: 10px auto;
   }
 
-  .form-grid {
-    grid-template-columns: 1fr;
-    gap: 0;
-  }
-
-  .form-actions {
+  .rx-btn-group {
     flex-direction: column;
   }
 
-  .form-actions button {
+  .rx-btn-group button {
     width: 100%;
   }
 
@@ -268,7 +330,15 @@
     display: none;
   }
 
-  .mobile-pharmacy-list {
+  .mobile-rx-list {
     display: flex;
+  }
+
+  .rx-filter-bar {
+    flex-direction: column;
+  }
+
+  .rx-filter-select {
+    width: 100%;
   }
 }

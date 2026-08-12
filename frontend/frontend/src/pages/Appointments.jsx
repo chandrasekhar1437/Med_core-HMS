@@ -5,10 +5,17 @@ import {
   updateAppointment,
   deleteAppointment,
 } from "../services/appointmentApi";
+import { useAuth } from "../context/AuthContext";
 import "./Appointments.css";
 
 export default function Appointments() {
+  const { user } = useAuth();
+  const role = (user?.role || "patient").toLowerCase();
+
   const [appointments, setAppointments] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
   const [form, setForm] = useState({
     patient_name: "",
     doctor_name: "",
@@ -17,6 +24,7 @@ export default function Appointments() {
     status: "Scheduled",
     reason: "",
   });
+
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,6 +32,13 @@ export default function Appointments() {
   useEffect(() => {
     fetchAppointments();
   }, []);
+
+  // Set default patient name if user is a patient
+  useEffect(() => {
+    if (role === "patient" && user?.name && !form.patient_name) {
+      setForm((prev) => ({ ...prev, patient_name: user.name }));
+    }
+  }, [role, user, form.patient_name]);
 
   const formatErrorMessage = (serverDetail) => {
     if (typeof serverDetail === "string") return serverDetail;
@@ -69,7 +84,7 @@ export default function Appointments() {
         await createAppointment(form);
       }
       setForm({
-        patient_name: "",
+        patient_name: role === "patient" ? user?.name || "" : "",
         doctor_name: "",
         appointment_date: "",
         appointment_time: "",
@@ -105,7 +120,7 @@ export default function Appointments() {
   const handleCancelEdit = () => {
     setEditingId(null);
     setForm({
-      patient_name: "",
+      patient_name: role === "patient" ? user?.name || "" : "",
       doctor_name: "",
       appointment_date: "",
       appointment_time: "",
@@ -136,13 +151,23 @@ export default function Appointments() {
     }
   };
 
+  // Filter appointments by patient/doctor name search & status dropdown
+  const filteredAppointments = appointments.filter((app) => {
+    const matchesSearch =
+      app.patient_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      app.doctor_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      statusFilter === "All" || app.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="appointments-container">
       <h2 className="appointments-header">Appointments Management</h2>
 
       {error && <div className="error-message">{error}</div>}
 
-      {/* Appointment Form */}
+      {/* Appointment Booking / Editing Form */}
       <div className="appointment-card-form">
         <h3 className="form-title">
           {editingId ? "Edit Appointment" : "Book New Appointment"}
@@ -158,6 +183,7 @@ export default function Appointments() {
                 value={form.patient_name}
                 onChange={handleInputChange}
                 required
+                disabled={role === "patient"}
               />
             </div>
 
@@ -166,7 +192,7 @@ export default function Appointments() {
               <input
                 type="text"
                 name="doctor_name"
-                placeholder="Enter doctor name"
+                placeholder="e.g. Dr. Sarah Smith"
                 value={form.doctor_name}
                 onChange={handleInputChange}
                 required
@@ -201,6 +227,7 @@ export default function Appointments() {
                 name="status"
                 value={form.status}
                 onChange={handleInputChange}
+                disabled={role === "patient"}
               >
                 <option value="Scheduled">Scheduled</option>
                 <option value="Completed">Completed</option>
@@ -240,10 +267,31 @@ export default function Appointments() {
       {/* Appointment Display Section */}
       <h3>Existing Appointments</h3>
 
+      {/* Search and Status Filters */}
+      <div className="filter-bar-container">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Filter by patient or doctor..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select
+          className="filter-select"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="All">All Statuses</option>
+          <option value="Scheduled">Scheduled</option>
+          <option value="Completed">Completed</option>
+          <option value="Cancelled">Cancelled</option>
+        </select>
+      </div>
+
       {loading ? (
         <div className="no-data">Loading appointments...</div>
-      ) : appointments.length === 0 ? (
-        <div className="no-data">No appointments booked yet.</div>
+      ) : filteredAppointments.length === 0 ? (
+        <div className="no-data">No appointments found matching filters.</div>
       ) : (
         <>
           {/* Desktop Table View */}
@@ -261,7 +309,7 @@ export default function Appointments() {
                 </tr>
               </thead>
               <tbody>
-                {appointments.map((app) => {
+                {filteredAppointments.map((app) => {
                   const appId = app.id || app._id;
                   return (
                     <tr key={appId}>
@@ -296,7 +344,7 @@ export default function Appointments() {
 
           {/* Mobile Card View */}
           <div className="mobile-cards-container">
-            {appointments.map((app) => {
+            {filteredAppointments.map((app) => {
               const appId = app.id || app._id;
               return (
                 <div key={appId} className="appointment-mobile-card">

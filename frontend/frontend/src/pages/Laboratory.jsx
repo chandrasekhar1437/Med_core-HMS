@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Search, Trash2, RefreshCw, FlaskConical, X, Edit2 } from "lucide-react";
 import API from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import "./Laboratory.css";
 
 export default function Laboratory() {
+  const { user } = useAuth();
+  const role = (user?.role || "patient").toLowerCase();
+
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -41,7 +45,7 @@ export default function Laboratory() {
   const handleOpenAddModal = () => {
     setEditingId(null);
     setFormData({
-      patient_name: "",
+      patient_name: role === "patient" ? user?.name || "" : "",
       test_name: "",
       category: "Hematology",
       result: "",
@@ -69,7 +73,11 @@ export default function Laboratory() {
     e.preventDefault();
     try {
       if (editingId) {
-        await API.patch(`/laboratory/${editingId}`, formData);
+        try {
+          await API.patch(`/laboratory/${editingId}`, formData);
+        } catch {
+          await API.put(`/laboratory/${editingId}`, formData);
+        }
       } else {
         await API.post("/laboratory/", formData);
       }
@@ -96,6 +104,17 @@ export default function Laboratory() {
     }
   };
 
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "Completed":
+        return <span className="status-badge status-completed">Completed</span>;
+      case "Processing":
+        return <span className="status-badge status-processing">Processing</span>;
+      default:
+        return <span className="status-badge status-pending">Pending</span>;
+    }
+  };
+
   const filtered = records.filter(
     (item) =>
       item.patient_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,15 +128,17 @@ export default function Laboratory() {
       <div className="lab-header-row">
         <div>
           <h1 className="lab-title">
-            <FlaskConical color="#9333ea" /> Laboratory Module
+            <FlaskConical color="var(--primary, #0284c7)" /> Laboratory Module
           </h1>
           <p className="lab-subtitle">
-            Manage lab orders and diagnostic test results
+            Manage diagnostic test orders, pending labs, and patient reports
           </p>
         </div>
-        <button onClick={handleOpenAddModal} className="btn-add-test">
-          <Plus size={18} /> New Test Record
-        </button>
+        {role !== "patient" && (
+          <button onClick={handleOpenAddModal} className="btn-add-test">
+            <Plus size={18} /> New Test Record
+          </button>
+        )}
       </div>
 
       {error && <div className="alert-error">{error}</div>}
@@ -135,7 +156,7 @@ export default function Laboratory() {
           />
         </div>
         <button onClick={fetchLabRecords} className="btn-refresh" title="Refresh records">
-          <RefreshCw size={18} color="#64748b" />
+          <RefreshCw size={18} color="var(--text-muted, #64748b)" />
         </button>
       </div>
 
@@ -150,56 +171,53 @@ export default function Laboratory() {
               <th>Result</th>
               <th>Status</th>
               <th>Date</th>
-              <th style={{ textAlign: "right" }}>Actions</th>
+              {role !== "patient" && <th style={{ textAlign: "right" }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="empty-state">
+                <td colSpan={role !== "patient" ? 7 : 6} className="empty-state">
                   Loading lab records...
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="empty-state">
+                <td colSpan={role !== "patient" ? 7 : 6} className="empty-state">
                   No test records found
                 </td>
               </tr>
             ) : (
               filtered.map((item) => {
                 const recordId = item.id || item._id;
-                const isCompleted = item.status === "Completed";
                 return (
                   <tr key={recordId}>
-                    <td style={{ fontWeight: "600", color: "#0f172a" }}>
+                    <td style={{ fontWeight: "600", color: "var(--text-main)" }}>
                       {item.patient_name}
                     </td>
                     <td>{item.test_name}</td>
                     <td>{item.category}</td>
                     <td>{item.result || "Pending"}</td>
-                    <td>
-                      <span className={`status-badge ${isCompleted ? "status-completed" : "status-pending"}`}>
-                        {item.status}
-                      </span>
-                    </td>
+                    <td>{getStatusBadge(item.status)}</td>
                     <td>{item.date}</td>
-                    <td style={{ textAlign: "right" }}>
-                      <button
-                        onClick={() => handleOpenEditModal(item)}
-                        className="icon-btn icon-btn-edit"
-                        title="Edit Record"
-                      >
-                        <Edit2 size={16} color="#d97706" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(recordId)}
-                        className="icon-btn"
-                        title="Delete Record"
-                      >
-                        <Trash2 size={16} color="#dc2626" />
-                      </button>
-                    </td>
+                    {role !== "patient" && (
+                      <td style={{ textAlign: "right" }}>
+                        <button
+                          onClick={() => handleOpenEditModal(item)}
+                          className="icon-btn icon-btn-edit"
+                          title="Edit Record"
+                        >
+                          <Edit2 size={16} color="var(--warning, #d97706)" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(recordId)}
+                          className="icon-btn"
+                          title="Delete Record"
+                        >
+                          <Trash2 size={16} color="var(--danger, #dc2626)" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 );
               })
@@ -217,14 +235,11 @@ export default function Laboratory() {
         ) : (
           filtered.map((item) => {
             const recordId = item.id || item._id;
-            const isCompleted = item.status === "Completed";
             return (
               <div key={recordId} className="lab-mobile-card">
                 <div className="mobile-card-header">
                   <span className="patient-title-mobile">{item.patient_name}</span>
-                  <span className={`status-badge ${isCompleted ? "status-completed" : "status-pending"}`}>
-                    {item.status}
-                  </span>
+                  {getStatusBadge(item.status)}
                 </div>
                 <div className="mobile-card-body">
                   <div><strong>Test:</strong> {item.test_name}</div>
@@ -232,22 +247,24 @@ export default function Laboratory() {
                   <div><strong>Result:</strong> {item.result || "Pending"}</div>
                   <div><strong>Date:</strong> {item.date}</div>
                 </div>
-                <div className="mobile-card-actions">
-                  <button
-                    onClick={() => handleOpenEditModal(item)}
-                    className="mobile-action-btn"
-                    style={{ color: "#b45309" }}
-                  >
-                    <Edit2 size={15} color="#d97706" /> Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(recordId)}
-                    className="mobile-action-btn"
-                    style={{ color: "#dc2626" }}
-                  >
-                    <Trash2 size={15} color="#dc2626" /> Delete
-                  </button>
-                </div>
+                {role !== "patient" && (
+                  <div className="mobile-card-actions">
+                    <button
+                      onClick={() => handleOpenEditModal(item)}
+                      className="mobile-action-btn"
+                      style={{ color: "var(--warning, #b45309)" }}
+                    >
+                      <Edit2 size={15} color="var(--warning, #d97706)" /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(recordId)}
+                      className="mobile-action-btn"
+                      style={{ color: "var(--danger, #dc2626)" }}
+                    >
+                      <Trash2 size={15} color="var(--danger, #dc2626)" /> Delete
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })
@@ -277,7 +294,7 @@ export default function Laboratory() {
               />
               <input
                 required
-                placeholder="Test Name"
+                placeholder="Test Name (e.g. Lipid Profile, Complete Blood Count)"
                 value={formData.test_name}
                 onChange={(e) =>
                   setFormData({ ...formData, test_name: e.target.value })
@@ -285,14 +302,14 @@ export default function Laboratory() {
               />
               <input
                 required
-                placeholder="Category"
+                placeholder="Category (e.g. Hematology, Biochemistry)"
                 value={formData.category}
                 onChange={(e) =>
                   setFormData({ ...formData, category: e.target.value })
                 }
               />
               <input
-                placeholder="Result"
+                placeholder="Result / Diagnostic Value"
                 value={formData.result}
                 onChange={(e) =>
                   setFormData({ ...formData, result: e.target.value })
@@ -305,6 +322,7 @@ export default function Laboratory() {
                 }
               >
                 <option value="Pending">Pending</option>
+                <option value="Processing">Processing</option>
                 <option value="Completed">Completed</option>
               </select>
               <input

@@ -5,10 +5,17 @@ import {
   updateMedicine,
   deleteMedicine,
 } from "../services/pharmacyApi";
+import { useAuth } from "../context/AuthContext";
 import "./Pharmacy.css";
 
 export default function Pharmacy() {
+  const { user } = useAuth();
+  const role = (user?.role || "patient").toLowerCase();
+
   const [medicines, setMedicines] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+
   const [form, setForm] = useState({
     name: "",
     category: "Antibiotic",
@@ -16,6 +23,7 @@ export default function Pharmacy() {
     stock_quantity: "",
     unit_price: "",
   });
+
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -120,98 +128,134 @@ export default function Pharmacy() {
     }
   };
 
+  const filteredMedicines = medicines.filter((med) => {
+    const matchesSearch =
+      med.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      med.dosage?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      categoryFilter === "All" || med.category === categoryFilter;
+
+    return matchesSearch && matchesCategory;
+  });
+
   return (
     <div className="pharmacy-container">
       <h2 className="pharmacy-header">Pharmacy & Medicine Inventory</h2>
 
       {error && <div className="error-message">{error}</div>}
 
-      <div className="pharmacy-card-form">
-        <h3 className="form-title">
-          {editingId ? "Edit Medicine Record" : "Add Medicine to Stock"}
-        </h3>
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid">
-            <div className="form-group">
-              <label>Medicine Name</label>
-              <input
-                type="text"
-                name="name"
-                placeholder="e.g. Amoxicillin, Paracetamol"
-                value={form.name}
-                onChange={handleInputChange}
-                required
-              />
+      {/* Stock Management Form — Accessible to Doctors, Staff, Pharmacists, and Admins */}
+      {role !== "patient" && (
+        <div className="pharmacy-card-form">
+          <h3 className="form-title">
+            {editingId ? "Edit Medicine Record" : "Add Medicine to Stock"}
+          </h3>
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <div className="form-group">
+                <label>Medicine Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="e.g. Amoxicillin, Paracetamol"
+                  value={form.name}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Category</label>
+                <select name="category" value={form.category} onChange={handleInputChange}>
+                  <option value="Antibiotic">Antibiotic</option>
+                  <option value="Painkiller">Painkiller</option>
+                  <option value="Antiviral">Antiviral</option>
+                  <option value="Supplement">Supplement</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Dosage</label>
+                <input
+                  type="text"
+                  name="dosage"
+                  placeholder="e.g. 500mg, 10ml"
+                  value={form.dosage}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Stock Quantity</label>
+                <input
+                  type="number"
+                  name="stock_quantity"
+                  placeholder="Number of units"
+                  value={form.stock_quantity}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Unit Price ($)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="unit_price"
+                  placeholder="Price per unit"
+                  value={form.unit_price}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label>Category</label>
-              <select name="category" value={form.category} onChange={handleInputChange}>
-                <option value="Antibiotic">Antibiotic</option>
-                <option value="Painkiller">Painkiller</option>
-                <option value="Antiviral">Antiviral</option>
-                <option value="Supplement">Supplement</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Dosage</label>
-              <input
-                type="text"
-                name="dosage"
-                placeholder="e.g. 500mg, 10ml"
-                value={form.dosage}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Stock Quantity</label>
-              <input
-                type="number"
-                name="stock_quantity"
-                placeholder="Number of units"
-                value={form.stock_quantity}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Unit Price ($)</label>
-              <input
-                type="number"
-                step="0.01"
-                name="unit_price"
-                placeholder="Price per unit"
-                value={form.unit_price}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button type="submit" className="btn btn-primary">
-              {editingId ? "Update Stock" : "Add to Inventory"}
-            </button>
-            {editingId && (
-              <button type="button" className="btn btn-secondary" onClick={handleCancelEdit}>
-                Cancel
+            <div className="form-actions">
+              <button type="submit" className="btn btn-primary">
+                {editingId ? "Update Stock" : "Add to Inventory"}
               </button>
-            )}
-          </div>
-        </form>
-      </div>
+              {editingId && (
+                <button type="button" className="btn btn-secondary" onClick={handleCancelEdit}>
+                  Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
 
       <h3>Stock Directory</h3>
 
+      {/* Filter and Search Bar */}
+      <div className="filter-bar-container">
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Search by medicine name or dosage..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <select
+          className="filter-select"
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <option value="All">All Categories</option>
+          <option value="Antibiotic">Antibiotic</option>
+          <option value="Painkiller">Painkiller</option>
+          <option value="Antiviral">Antiviral</option>
+          <option value="Supplement">Supplement</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
       {loading ? (
         <div className="no-data">Loading inventory...</div>
-      ) : medicines.length === 0 ? (
-        <div className="no-data">No medicines in inventory yet.</div>
+      ) : filteredMedicines.length === 0 ? (
+        <div className="no-data">No medicines found in inventory.</div>
       ) : (
         <>
           {/* Desktop Table View */}
@@ -224,11 +268,11 @@ export default function Pharmacy() {
                   <th>Dosage</th>
                   <th>Stock Left</th>
                   <th>Unit Price</th>
-                  <th>Actions</th>
+                  {role !== "patient" && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
-                {medicines.map((med) => {
+                {filteredMedicines.map((med) => {
                   const medId = med.id || med._id;
                   const isLowStock = Number(med.stock_quantity) < 10;
                   return (
@@ -240,18 +284,20 @@ export default function Pharmacy() {
                       <td>{med.dosage}</td>
                       <td>
                         <span className={`badge-stock ${isLowStock ? "stock-low" : "stock-in"}`}>
-                          {med.stock_quantity} units
+                          {med.stock_quantity} units {isLowStock && "(Low Stock)"}
                         </span>
                       </td>
                       <td>${Number(med.unit_price || 0).toFixed(2)}</td>
-                      <td>
-                        <button className="btn btn-edit" onClick={() => handleEditClick(med)}>
-                          Edit
-                        </button>
-                        <button className="btn btn-delete" onClick={() => handleDelete(medId)}>
-                          Delete
-                        </button>
-                      </td>
+                      {role !== "patient" && (
+                        <td>
+                          <button className="btn btn-edit" onClick={() => handleEditClick(med)}>
+                            Edit
+                          </button>
+                          <button className="btn btn-delete" onClick={() => handleDelete(medId)}>
+                            Delete
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
@@ -261,7 +307,7 @@ export default function Pharmacy() {
 
           {/* Mobile Cards List View */}
           <div className="mobile-pharmacy-list">
-            {medicines.map((med) => {
+            {filteredMedicines.map((med) => {
               const medId = med.id || med._id;
               const isLowStock = Number(med.stock_quantity) < 10;
               return (
@@ -277,14 +323,16 @@ export default function Pharmacy() {
                     <div><strong>Dosage:</strong> {med.dosage}</div>
                     <div><strong>Price:</strong> ${Number(med.unit_price || 0).toFixed(2)}</div>
                   </div>
-                  <div className="mobile-card-actions">
-                    <button className="btn btn-edit" onClick={() => handleEditClick(med)}>
-                      Edit
-                    </button>
-                    <button className="btn btn-delete" onClick={() => handleDelete(medId)}>
-                      Delete
-                    </button>
-                  </div>
+                  {role !== "patient" && (
+                    <div className="mobile-card-actions">
+                      <button className="btn btn-edit" onClick={() => handleEditClick(med)}>
+                        Edit
+                      </button>
+                      <button className="btn btn-delete" onClick={() => handleDelete(medId)}>
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })}

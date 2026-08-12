@@ -3,9 +3,13 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { exportToCSV } from "../utils/exportCsv";
 import API from "../services/api";
+import { useAuth } from "../context/AuthContext";
 import styles from "./Billing.module.css";
 
 export default function Billing() {
+  const { user } = useAuth();
+  const role = (user?.role || "patient").toLowerCase();
+
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -210,6 +214,7 @@ export default function Billing() {
       );
     }
   };
+
   const totalRevenue = filteredInvoices
     .filter((inv) => inv.status?.toLowerCase() === "paid")
     .reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
@@ -228,12 +233,14 @@ export default function Billing() {
           </p>
         </div>
         <div className={styles.actionButtons}>
-          <button
-            className={styles.addButton}
-            onClick={() => setIsAddOpen(true)}
-          >
-            + Add Invoice
-          </button>
+          {role !== "patient" && (
+            <button
+              className={styles.addButton}
+              onClick={() => setIsAddOpen(true)}
+            >
+              + Add Invoice
+            </button>
+          )}
           <button
             className={styles.exportButton}
             onClick={handleExportCSV}
@@ -243,7 +250,6 @@ export default function Billing() {
           </button>
         </div>
       </div>
-
       {error && <div className={styles.errorAlert}>{error}</div>}
 
       <div className={styles.metricsGrid}>
@@ -341,18 +347,22 @@ export default function Billing() {
                             >
                               UPI Pay
                             </button>
-                            <button
-                              className={styles.editBtn}
-                              onClick={() => handleOpenEdit(inv)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className={styles.deleteBtn}
-                              onClick={() => handleDelete(invId)}
-                            >
-                              Delete
-                            </button>
+                            {role !== "patient" && (
+                              <>
+                                <button
+                                  className={styles.editBtn}
+                                  onClick={() => handleOpenEdit(inv)}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  className={styles.deleteBtn}
+                                  onClick={() => handleDelete(invId)}
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -404,18 +414,22 @@ export default function Billing() {
                       >
                         UPI Pay
                       </button>
-                      <button
-                        className={styles.editBtn}
-                        onClick={() => handleOpenEdit(inv)}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() => handleDelete(invId)}
-                      >
-                        Delete
-                      </button>
+                      {role !== "patient" && (
+                        <>
+                          <button
+                            className={styles.editBtn}
+                            onClick={() => handleOpenEdit(inv)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className={styles.deleteBtn}
+                            onClick={() => handleDelete(invId)}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -424,6 +438,65 @@ export default function Billing() {
           </>
         )}
       </div>
+
+      {/* View/Print Invoice Modal */}
+      {isPreviewOpen && selectedInvoice && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h3 className={styles.modalTitle}>Invoice Summary</h3>
+            <div style={{ marginBottom: "16px", fontSize: "14px" }}>
+              <p><strong>Billed To:</strong> {selectedInvoice.patient_name}</p>
+              <p><strong>Doctor:</strong> {selectedInvoice.doctor_name || "N/A"}</p>
+              <p><strong>Total Amount:</strong> ${Number(selectedInvoice.amount || 0).toFixed(2)}</p>
+              <p><strong>Status:</strong> {selectedInvoice.status}</p>
+              <p><strong>Due Date:</strong> {selectedInvoice.due_date || "N/A"}</p>
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.submitBtn}
+                onClick={() => handleExportPDF(selectedInvoice)}
+              >
+                Download PDF
+              </button>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setIsPreviewOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* UPI Pay Modal */}
+      {isUpiModalOpen && selectedInvoice && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <h3 className={styles.modalTitle}>Scan & Pay via UPI</h3>
+            <div className={styles.upiBox}>
+              <p style={{ margin: 0, fontSize: "13px", color: "var(--text-muted)" }}>
+                Payable Amount:
+              </p>
+              <h2 style={{ margin: "4px 0 12px 0", color: "var(--text-main)" }}>
+                ${Number(selectedInvoice.amount || 0).toFixed(2)}
+              </h2>
+              <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted)" }}>
+                UPI VPA ID:
+              </p>
+              <div className={styles.upiIdText}>medcore.clinic@upi</div>
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setIsUpiModalOpen(false)}
+              >
+                Done / Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Invoice Modal */}
       {isAddOpen && (
@@ -589,145 +662,6 @@ export default function Billing() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Preview Invoice Modal */}
-      {isPreviewOpen && selectedInvoice && (
-        <div className={styles.modalOverlay}>
-          <div className={`${styles.modalContent} ${styles.previewModal}`}>
-            <div className={styles.previewHeader}>
-              <h3 className={styles.modalTitle}>Invoice Preview</h3>
-              <button
-                className={styles.closeIconBtn}
-                onClick={() => setIsPreviewOpen(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className={styles.previewBody}>
-              <div className={styles.previewTopRow}>
-                <div>
-                  <h2 className={styles.brandTitle}>MEDICAL CLINIC</h2>
-                  <p className={styles.previewMeta}>
-                    Invoice ID: #{selectedInvoice.id || selectedInvoice._id}
-                  </p>
-                  <p className={styles.previewMeta}>
-                    Due Date: {selectedInvoice.due_date || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <span
-                    className={`${styles.badge} ${
-                      styles[selectedInvoice.status?.toLowerCase() || "pending"]
-                    }`}
-                  >
-                    {selectedInvoice.status?.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              <div className={styles.previewInfoBox}>
-                <p className={styles.previewInfoText}>
-                  <strong>Patient:</strong> {selectedInvoice.patient_name}
-                </p>
-                <p className={styles.previewInfoText}>
-                  <strong>Doctor:</strong> {selectedInvoice.doctor_name || "N/A"}
-                </p>
-              </div>
-
-              <table className={styles.previewTable}>
-                <thead>
-                  <tr>
-                    <th>Description</th>
-                    <th className={styles.textRight}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Medical Services Rendered</td>
-                    <td className={styles.textRight}>
-                      ${Number(selectedInvoice.amount || 0).toFixed(2)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-
-              <div className={styles.previewTotalRow}>
-                <span>Total Payable:</span>
-                <strong>
-                  ${Number(selectedInvoice.amount || 0).toFixed(2)}
-                </strong>
-              </div>
-            </div>
-
-            <div className={styles.modalActions}>
-              <button
-                className={styles.exportButton}
-                onClick={() => handleExportPDF(selectedInvoice)}
-              >
-                Download PDF
-              </button>
-              <button
-                className={styles.cancelBtn}
-                onClick={() => setIsPreviewOpen(false)}
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* UPI QR Payment Modal */}
-      {isUpiModalOpen && selectedInvoice && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.previewHeader}>
-              <h3 className={styles.modalTitle}>UPI Payment QR Code</h3>
-              <button
-                className={styles.closeIconBtn}
-                onClick={() => setIsUpiModalOpen(false)}
-              >
-                ✕
-              </button>
-            </div>
-            <div className={styles.upiBody}>
-              <p className={styles.previewMeta}>
-                Scan using Google Pay, PhonePe, or Paytm
-              </p>
-              <div className={styles.qrWrapper}>
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
-                    `upi://pay?pa=medcorehospital@upi&pn=MedCore%20HMS&am=${
-                      selectedInvoice.amount || 0
-                    }&cu=INR`
-                  )}`}
-                  alt="UPI QR Code"
-                />
-              </div>
-              <div className={styles.previewInfoBox}>
-                <p className={styles.previewInfoText}>
-                  <strong>Patient:</strong> {selectedInvoice.patient_name}
-                </p>
-                <p className={styles.previewInfoText}>
-                  <strong>Amount:</strong> $
-                  {Number(selectedInvoice.amount || 0).toFixed(2)}
-                </p>
-                <p className={styles.previewInfoText}>
-                  <strong>VPA:</strong> <code>medcorehospital@upi</code>
-                </p>
-              </div>
-            </div>
-            <div className={styles.modalActions}>
-              <button
-                className={styles.cancelBtn}
-                onClick={() => setIsUpiModalOpen(false)}
-              >
-                Close
-              </button>
-            </div>
           </div>
         </div>
       )}
