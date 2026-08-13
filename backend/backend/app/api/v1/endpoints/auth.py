@@ -5,7 +5,7 @@ import traceback
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
-import requests
+import httpx
 from bson import ObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -59,7 +59,6 @@ def generate_otp(length: int = 6) -> str:
     """Generates a numeric 6-digit OTP code."""
     return "".join(random.choices(string.digits, k=length))
 
-
 async def send_otp_email_task(email_to: str, otp: str):
     """Sends OTP email via Resend HTTP API (primary) or FastMail SMTP (fallback)."""
     html_content = f"""
@@ -71,32 +70,33 @@ async def send_otp_email_task(email_to: str, otp: str):
     </div>
     """
 
-    # 1. Try Resend HTTP API first (Bypasses Render's SMTP Port Block)
+    # 1. Try Resend HTTP API first (Bypasses Render SMTP port block)
     if RESEND_API_KEY:
         try:
-            res = requests.post(
-                "https://api.resend.com/emails",
-                headers={
-                    "Authorization": f"Bearer {RESEND_API_KEY}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "from": "MedCore HMS <onboarding@resend.dev>",
-                    "to": [email_to],
-                    "subject": "MedCore HMS - Email Verification OTP",
-                    "html": html_content,
-                },
-                timeout=10,
-            )
-            if res.status_code in [200, 201]:
-                print(f"✅ OTP email delivered via Resend HTTP API to {email_to}", flush=True)
-                return
-            else:
-                print(f"⚠️ Resend HTTP API warning ({res.status_code}): {res.text}", flush=True)
+            async with httpx.AsyncClient() as client:
+                res = await client.post(
+                    "https://api.resend.com/emails",
+                    headers={
+                        "Authorization": f"Bearer {RESEND_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "from": "MedCore HMS <onboarding@resend.dev>",
+                        "to": [email_to],
+                        "subject": "MedCore HMS - Email Verification OTP",
+                        "html": html_content,
+                    },
+                    timeout=10.0,
+                )
+                if res.status_code in [200, 201]:
+                    print(f"✅ OTP email delivered via Resend HTTP API to {email_to}", flush=True)
+                    return
+                else:
+                    print(f"⚠️ Resend API warning ({res.status_code}): {res.text}", flush=True)
         except Exception as e:
             print(f"⚠️ Resend HTTP API exception: {str(e)}", flush=True)
 
-    # 2. Fallback to direct SMTP via FastMail
+    # 2. Fallback to FastMail SMTP
     try:
         message = MessageSchema(
             subject="MedCore HMS - Email Verification OTP",
@@ -106,9 +106,10 @@ async def send_otp_email_task(email_to: str, otp: str):
         )
         fm = FastMail(mail_config)
         await fm.send_message(message)
-        print(f"✅ OTP email delivered via SMTP to {email_to}", flush=True)
+        print(f"✅ OTP email delivered via FastMail SMTP to {email_to}", flush=True)
     except Exception as e:
         print(f"❌ SMTP Delivery Failure for {email_to}: {str(e)}", flush=True)
+
 
 
 async def send_admin_alert_task(user_email: str, event_type: str):
