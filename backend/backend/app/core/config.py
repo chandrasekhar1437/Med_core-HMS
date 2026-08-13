@@ -7,16 +7,17 @@ try:
 except ImportError:
     pass
 
+
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Med-core HMS"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
-    
+
     # Environment Variables
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change_me_to_a_secure_random_key")
     ALGORITHM: str = os.getenv("ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
-    
+
     # Check MONGO_DETAILS, MONGODB_URL, or DATABASE_URL
     MONGO_DETAILS: str = (
         os.getenv("MONGO_DETAILS")
@@ -26,10 +27,17 @@ class Settings(BaseSettings):
     )
     DB_NAME: str = os.getenv("DB_NAME", os.getenv("DATABASE_NAME", "med_core_hms"))
 
-settings = Settings()
+    # Gmail SMTP & Admin Notification Settings
+    MAIL_USERNAME: str = os.getenv("MAIL_USERNAME", "your_system_email@gmail.com")
+    MAIL_PASSWORD: str = os.getenv("MAIL_PASSWORD", "your_app_password")
+    MAIL_FROM: str = os.getenv("MAIL_FROM", "your_system_email@gmail.com")
+    MAIL_PORT: int = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_SERVER: str = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    ADMIN_NOTIFICATION_EMAIL: str = os.getenv("ADMIN_NOTIFICATION_EMAIL", "admin@medcore.com")
 
-MAIL_USERNAME=your_system_email@gmail.com
-MAIL_PASSWORD=your_app_password
-MAIL_FROM=your_system_email@gmail.com
-MAIL_PORT=587
-MAIL_SERVER=smtp.gmail.com
+    class Config:
+        case_sensitive = True
+        extra = "ignore"
+
+
+settings = Settings()
