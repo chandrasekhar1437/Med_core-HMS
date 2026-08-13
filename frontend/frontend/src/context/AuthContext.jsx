@@ -26,8 +26,8 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        // Uses central API instance instead of hardcoded localhost URL
-        const res = await API.get("/auth/me");
+        // Aligned route with backend prefix /api/v1/auth/me
+        const res = await API.get("/api/v1/auth/me");
         setUser(res.data);
         localStorage.setItem("user", JSON.stringify(res.data));
       } catch (err) {
@@ -44,10 +44,31 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, []);
 
-  const loginUser = (token, userData) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(userData));
-    setUser(userData);
+  // Accepts arguments flexibly as (arg1, arg2) -> handles both (token, userData) and (userData, token)
+  const loginUser = (arg1, arg2) => {
+    let token = "";
+    let userData = null;
+
+    if (typeof arg1 === "string" && (typeof arg2 === "object" || !arg2)) {
+      token = arg1;
+      userData = arg2;
+    } else if (typeof arg1 === "object" && typeof arg2 === "string") {
+      userData = arg1;
+      token = arg2;
+    } else if (typeof arg1 === "string" && typeof arg2 === "string") {
+      token = arg1;
+      userData = { email: "user@medcore.com", role: "admin" };
+    }
+
+    if (token) {
+      localStorage.setItem("token", token);
+      localStorage.setItem("access_token", token);
+    }
+
+    if (userData) {
+      localStorage.setItem("user", JSON.stringify(userData));
+      setUser(userData);
+    }
   };
 
   const logout = () => {
@@ -71,7 +92,9 @@ export function AuthProvider({ children }) {
         logout,
       }}
     >
-      {!loading ? children : (
+      {!loading ? (
+        children
+      ) : (
         <div style={styles.loader}>
           <p>Restoring session...</p>
         </div>

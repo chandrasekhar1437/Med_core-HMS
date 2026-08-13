@@ -9,6 +9,8 @@ import {
   ArrowRight,
   AlertCircle,
   UserCheck,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
@@ -18,6 +20,7 @@ export default function Login() {
   const [email, setEmail] = useState("anil@gmail.com");
   const [password, setPassword] = useState("123456");
   const [role, setRole] = useState("Admin");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -33,7 +36,8 @@ export default function Login() {
     const cleanPassword = password.trim();
 
     try {
-      const response = await API.post("/auth/login", {
+      // Endpoint updated to match backend prefix /api/v1/auth/login
+      const response = await API.post("/api/v1/auth/login", {
         email: cleanEmail,
         password: cleanPassword,
         role: role,
@@ -46,13 +50,19 @@ export default function Login() {
         role: role,
       };
 
+      // Handle context login flexible parameters
       const handleAuthLogin = loginUser || login;
       if (typeof handleAuthLogin === "function") {
-        handleAuthLogin(access_token, userData);
-      } else {
-        localStorage.setItem("token", access_token);
-        localStorage.setItem("user", JSON.stringify(userData));
+        try {
+          handleAuthLogin(userData, access_token);
+        } catch {
+          handleAuthLogin(access_token, userData);
+        }
       }
+
+      // Persist fallback token & user state
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("user", JSON.stringify(userData));
 
       navigate("/");
     } catch (err) {
@@ -117,6 +127,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@medcore.com"
                   required
+                  autoComplete="email"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
@@ -125,22 +136,44 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Password */}
+            {/* Password with Eye Toggle */}
             <div className="login-input-group">
               <label className="login-input-label">Password</label>
-              <div className="login-input-wrapper">
+              <div className="login-input-wrapper" style={{ position: "relative" }}>
                 <Lock size={18} color="#94a3b8" className="login-input-icon" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  autoComplete="current-password"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
                   className="login-field-input"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "12px",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: 0,
+                  }}
+                  title={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} color="#94a3b8" />
+                  ) : (
+                    <Eye size={18} color="#94a3b8" />
+                  )}
+                </button>
               </div>
             </div>
 
