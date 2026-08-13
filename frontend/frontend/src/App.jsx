@@ -12,6 +12,7 @@ import Billing from "./pages/Billing";
 import MedicalRecords from "./pages/MedicalRecords";
 import Pharmacy from "./pages/Pharmacy";
 import Laboratory from "./pages/Laboratory";
+import WardManagement from "./pages/WardManagement";
 import Settings from "./pages/Settings";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
@@ -90,6 +91,7 @@ export default function App() {
               <Route path="/medical-records" element={<MedicalRecords />} />
               <Route path="/pharmacy" element={<Pharmacy />} />
               <Route path="/laboratory" element={<Laboratory />} />
+              <Route path="/ward-management" element={<WardManagement />} />
               <Route path="/settings" element={<Settings />} />
             </Route>
           </Route>
