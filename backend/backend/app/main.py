@@ -13,6 +13,7 @@ from app.api.v1.endpoints import (
     prescriptions,
     settings,
     users,
+    ward_management,
 )
 
 app = FastAPI(
@@ -41,6 +42,7 @@ app.include_router(prescriptions.router, prefix="/api/v1/prescriptions", tags=["
 app.include_router(billing.router, prefix="/api/v1/billing", tags=["billing"])
 app.include_router(laboratory.router, prefix="/api/v1/laboratory", tags=["laboratory"])
 app.include_router(pharmacy.router, prefix="/api/v1/pharmacy", tags=["pharmacy"])
+app.include_router(ward_management.router, prefix="/api/v1/ward-management", tags=["ward_management"])
 app.include_router(settings.router, prefix="/api/v1/settings", tags=["settings"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
