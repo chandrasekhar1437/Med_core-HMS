@@ -32,15 +32,17 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "your_app_password")
 MAIL_FROM = os.getenv("MAIL_FROM", "your_system_email@gmail.com")
 ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "admin@medcore.com")
 
+# Updated Mail Configuration: Using Port 465 SSL for Render Compatibility
 mail_config = ConnectionConfig(
     MAIL_USERNAME=MAIL_USERNAME,
     MAIL_PASSWORD=MAIL_PASSWORD,
     MAIL_FROM=MAIL_FROM,
-    MAIL_PORT=587,
+    MAIL_PORT=465,
     MAIL_SERVER="smtp.gmail.com",
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_STARTTLS=False,
+    MAIL_SSL_TLS=True,
     USE_CREDENTIALS=True,
+    TIMEOUT=15,
 )
 
 # Temporary In-Memory OTP Store & Security Trackers
@@ -129,6 +131,7 @@ def record_failed_attempt(email: str):
 
     FAILED_LOGIN_ATTEMPTS[email] = record
 
+
 def reset_failed_attempts(email: str):
     """Clears failed login attempt counter upon successful authentication."""
     FAILED_LOGIN_ATTEMPTS.pop(email, None)
@@ -199,6 +202,11 @@ async def send_otp(request: Request, background_tasks: BackgroundTasks):
             "expires_at": datetime.utcnow() + timedelta(minutes=10),
         }
 
+        # Print OTP to server logs for immediate testing/debugging
+        print("\n==========================================")
+        print(f"🔑 RESET OTP CODE FOR [{email}]: {otp}")
+        print("==========================================\n", flush=True)
+
         background_tasks.add_task(send_otp_email_task, email, otp)
         return {"message": f"Verification OTP sent successfully to {email}"}
     except HTTPException as he:
@@ -208,8 +216,6 @@ async def send_otp(request: Request, background_tasks: BackgroundTasks):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate OTP: {str(e)}",
         )
-
-
 # 2. REGISTER WITH OTP VERIFICATION
 @router.post("/register-with-otp", status_code=status.HTTP_201_CREATED)
 @router.post("/register-with-otp/", status_code=status.HTTP_201_CREATED)
