@@ -5,6 +5,7 @@ import traceback
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
+import requests
 from bson import ObjectId
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -27,12 +28,13 @@ router = APIRouter(prefix="", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/swagger-login")
 
 # Environment & Mail Setup
-MAIL_USERNAME = os.getenv("MAIL_USERNAME", "your_system_email@gmail.com")
-MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "your_app_password")
-MAIL_FROM = os.getenv("MAIL_FROM", "your_system_email@gmail.com")
-ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "admin@medcore.com")
+MAIL_USERNAME = os.getenv("MAIL_USERNAME", "14372ee091@gmail.com")
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "wpffmxyaaxqostho")
+MAIL_FROM = os.getenv("MAIL_FROM", "14372ee091@gmail.com")
+ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "14372ee091@gmail.com")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 
-# Mail Configuration: Using Port 465 SSL for Render Compatibility
+# Mail Configuration (Fallback for FastMail)
 mail_config = ConnectionConfig(
     MAIL_USERNAME=MAIL_USERNAME,
     MAIL_PASSWORD=MAIL_PASSWORD,
@@ -59,16 +61,43 @@ def generate_otp(length: int = 6) -> str:
 
 
 async def send_otp_email_task(email_to: str, otp: str):
-    """Sends OTP email via Gmail SMTP with direct exception handling."""
+    """Sends OTP email via Resend HTTP API (primary) or FastMail SMTP (fallback)."""
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f8fafc; color: #1e293b;">
+        <h2 style="color: #0284c7;">MedCore HMS Verification</h2>
+        <p>Your one-time email verification code is:</p>
+        <h1 style="font-size: 32px; letter-spacing: 4px; color: #0284c7;">{otp}</h1>
+        <p>This code is valid for 10 minutes. Do not share this code with anyone.</p>
+    </div>
+    """
+
+    # 1. Try Resend HTTP API first (Bypasses Render's SMTP Port Block)
+    if RESEND_API_KEY:
+        try:
+            res = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": "MedCore HMS <onboarding@resend.dev>",
+                    "to": [email_to],
+                    "subject": "MedCore HMS - Email Verification OTP",
+                    "html": html_content,
+                },
+                timeout=10,
+            )
+            if res.status_code in [200, 201]:
+                print(f"✅ OTP email delivered via Resend HTTP API to {email_to}", flush=True)
+                return
+            else:
+                print(f"⚠️ Resend HTTP API warning ({res.status_code}): {res.text}", flush=True)
+        except Exception as e:
+            print(f"⚠️ Resend HTTP API exception: {str(e)}", flush=True)
+
+    # 2. Fallback to direct SMTP via FastMail
     try:
-        html_content = f"""
-        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f8fafc; color: #1e293b;">
-            <h2 style="color: #0284c7;">MedCore HMS Verification</h2>
-            <p>Your one-time email verification code is:</p>
-            <h1 style="font-size: 32px; letter-spacing: 4px; color: #0284c7;">{otp}</h1>
-            <p>This code is valid for 10 minutes. Do not share this code with anyone.</p>
-        </div>
-        """
         message = MessageSchema(
             subject="MedCore HMS - Email Verification OTP",
             recipients=[email_to],
@@ -77,7 +106,7 @@ async def send_otp_email_task(email_to: str, otp: str):
         )
         fm = FastMail(mail_config)
         await fm.send_message(message)
-        print(f"✅ OTP email successfully delivered to {email_to}", flush=True)
+        print(f"✅ OTP email delivered via SMTP to {email_to}", flush=True)
     except Exception as e:
         print(f"❌ SMTP Delivery Failure for {email_to}: {str(e)}", flush=True)
 
@@ -203,12 +232,12 @@ async def send_otp(request: Request, background_tasks: BackgroundTasks):
             "expires_at": datetime.utcnow() + timedelta(minutes=10),
         }
 
-        # Print OTP to server logs for immediate visibility
+        # Always print OTP directly to Render console logs
         print("\n==========================================", flush=True)
         print(f"🔑 RESET OTP CODE FOR [{email}]: {otp}", flush=True)
         print("==========================================\n", flush=True)
 
-        # Await directly so SMTP logs render instantly
+        # Trigger email delivery task directly
         await send_otp_email_task(email, otp)
 
         return {"message": f"Verification OTP sent successfully to {email}"}
@@ -220,6 +249,7 @@ async def send_otp(request: Request, background_tasks: BackgroundTasks):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate OTP: {str(e)}",
         )
+
 
 # 2. REGISTER WITH OTP VERIFICATION
 @router.post("/register-with-otp", status_code=status.HTTP_201_CREATED)
@@ -501,7 +531,7 @@ async def login(request: Request):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login failed: {str(e)}",
         )
-
+        
 
 # 6. SWAGGER FORM LOGIN
 @router.post("/swagger-login", include_in_schema=False)
