@@ -43,8 +43,16 @@ export default function Login() {
     }
   };
 
+  // Explicit form submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Prevent submitting empty fields
+    if (!email.trim() || !password.trim()) {
+      setError("Please enter both email and password.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -166,7 +174,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={getEmailPlaceholder()}
                   required
-                  autoComplete="email"
+                  autoComplete="off"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
@@ -175,7 +183,7 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Password with Eye Toggle */}
+            {/* Password Field */}
             <div className="login-input-group">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <label className="login-input-label">Password</label>
@@ -203,7 +211,7 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
@@ -233,6 +241,7 @@ export default function Login() {
               </div>
             </div>
 
+            {/* Manual Action Button */}
             <button type="submit" disabled={loading} className="login-submit-btn">
               {loading ? (
                 "Authenticating..."
