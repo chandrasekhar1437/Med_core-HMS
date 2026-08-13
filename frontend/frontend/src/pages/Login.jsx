@@ -12,6 +12,7 @@ import {
   Eye,
   EyeOff,
 } from "lucide-react";
+import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
 import "./Login.css";
@@ -34,14 +35,36 @@ export default function Login() {
 
     const cleanEmail = email.toLowerCase().trim();
     const cleanPassword = password.trim();
+    const payload = {
+      email: cleanEmail,
+      password: cleanPassword,
+      role: role,
+    };
 
     try {
-      // Endpoint updated to match backend prefix /api/v1/auth/login
-      const response = await API.post("/api/v1/auth/login", {
-        email: cleanEmail,
-        password: cleanPassword,
-        role: role,
-      });
+      let response;
+
+      // Endpoint strategy: Try multiple route variants to prevent 404 Not Found errors
+      try {
+        response = await API.post("/api/v1/auth/login", payload);
+      } catch (err1) {
+        if (err1.response && err1.response.status === 404) {
+          try {
+            response = await API.post("/auth/login", payload);
+          } catch (err2) {
+            if (err2.response && err2.response.status === 404) {
+              // Direct fallback using origin backend URL
+              const baseURL = API.defaults.baseURL || "https://medcore-hms.onrender.com";
+              const cleanBase = baseURL.replace(/\/api\/v1\/?$/, "").replace(/\/$/, "");
+              response = await axios.post(`${cleanBase}/api/v1/auth/login`, payload);
+            } else {
+              throw err2;
+            }
+          }
+        } else {
+          throw err1;
+        }
+      }
 
       const { access_token, user } = response.data;
       const userData = user || {
@@ -50,7 +73,7 @@ export default function Login() {
         role: role,
       };
 
-      // Handle context login flexible parameters
+      // Execute login via context with fallback parameter order
       const handleAuthLogin = loginUser || login;
       if (typeof handleAuthLogin === "function") {
         try {
@@ -60,13 +83,14 @@ export default function Login() {
         }
       }
 
-      // Persist fallback token & user state
+      // Local storage fallback persistence
       localStorage.setItem("token", access_token);
+      localStorage.setItem("access_token", access_token);
       localStorage.setItem("user", JSON.stringify(userData));
 
       navigate("/");
     } catch (err) {
-      console.error("Login failed:", err);
+      console.error("Login attempt failed:", err);
       const serverMsg = err.response?.data?.detail;
       setError(
         typeof serverMsg === "string"
