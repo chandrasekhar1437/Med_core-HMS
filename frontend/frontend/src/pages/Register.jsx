@@ -32,6 +32,12 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      setError("Please fill out all required fields.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -50,22 +56,15 @@ export default function Register() {
     try {
       let response;
 
-      // Endpoint strategy: Try multiple route variants to prevent 404 Not Found errors
+      // Clean request routing: API instance already handles baseURL (/api/v1)
       try {
-        response = await API.post("/api/v1/auth/register", payload);
+        response = await API.post("/auth/register", payload);
       } catch (err1) {
         if (err1.response && err1.response.status === 404) {
-          try {
-            response = await API.post("/auth/register", payload);
-          } catch (err2) {
-            if (err2.response && err2.response.status === 404) {
-              const baseURL = API.defaults.baseURL || "https://medcore-hms.onrender.com";
-              const cleanBase = baseURL.replace(/\/api\/v1\/?$/, "").replace(/\/$/, "");
-              response = await axios.post(`${cleanBase}/api/v1/auth/register`, payload);
-            } else {
-              throw err2;
-            }
-          }
+          // Fallback if backend does not prefix /api/v1
+          const baseURL = API.defaults.baseURL || "https://medcore-hms.onrender.com";
+          const cleanBase = baseURL.replace(/\/api\/v1\/?$/, "").replace(/\/$/, "");
+          response = await axios.post(`${cleanBase}/api/v1/auth/register`, payload);
         } else {
           throw err1;
         }
@@ -173,6 +172,7 @@ export default function Register() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={role === "Admin" ? "admin@medcore.com" : "patient@example.com"}
                   required
+                  autoComplete="off"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
@@ -192,6 +192,7 @@ export default function Register() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="At least 8 characters"
                   required
+                  autoComplete="new-password"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
