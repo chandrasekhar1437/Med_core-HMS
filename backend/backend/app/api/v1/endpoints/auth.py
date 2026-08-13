@@ -22,7 +22,8 @@ from app.schemas.user import (
     UserUpdate,
 )
 
-router = APIRouter()
+# Set prefix="" so routes bind cleanly under /api/v1/auth and /auth
+router = APIRouter(prefix="", tags=["auth"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/swagger-login")
 
 # Environment & Mail Setup
@@ -128,7 +129,6 @@ def record_failed_attempt(email: str):
 
     FAILED_LOGIN_ATTEMPTS[email] = record
 
-
 def reset_failed_attempts(email: str):
     """Clears failed login attempt counter upon successful authentication."""
     FAILED_LOGIN_ATTEMPTS.pop(email, None)
@@ -181,6 +181,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
 
 # 1. SEND GMAIL OTP CODE
 @router.post("/send-otp")
+@router.post("/send-otp/")
 async def send_otp(request: Request, background_tasks: BackgroundTasks):
     try:
         body = await request.json()
@@ -211,6 +212,7 @@ async def send_otp(request: Request, background_tasks: BackgroundTasks):
 
 # 2. REGISTER WITH OTP VERIFICATION
 @router.post("/register-with-otp", status_code=status.HTTP_201_CREATED)
+@router.post("/register-with-otp/", status_code=status.HTTP_201_CREATED)
 async def register_with_otp(request: Request, background_tasks: BackgroundTasks):
     try:
         body = await request.json()
@@ -234,7 +236,6 @@ async def register_with_otp(request: Request, background_tasks: BackgroundTasks)
                 detail="Invalid or expired OTP code",
             )
 
-        # Clear verified OTP
         OTP_STORE.pop(email, None)
 
         existing = await db.users.find_one({"email": email})
@@ -286,6 +287,7 @@ async def register_with_otp(request: Request, background_tasks: BackgroundTasks)
 
 # 3. FORGOT PASSWORD RESET VIA OTP
 @router.post("/reset-password-otp")
+@router.post("/reset-password-otp/")
 async def reset_password_otp(request: Request, background_tasks: BackgroundTasks):
     try:
         body = await request.json()
@@ -340,6 +342,7 @@ async def reset_password_otp(request: Request, background_tasks: BackgroundTasks
 
 # 4. STANDARD REGISTER
 @router.post("/register", status_code=status.HTTP_201_CREATED)
+@router.post("/register/", status_code=status.HTTP_201_CREATED)
 async def register(request: Request, background_tasks: BackgroundTasks):
     try:
         body = await request.json()
@@ -416,6 +419,7 @@ async def register(request: Request, background_tasks: BackgroundTasks):
 
 # 5. FRONTEND JSON LOGIN
 @router.post("/login")
+@router.post("/login/")
 async def login(request: Request):
     try:
         body = await request.json()
@@ -599,24 +603,23 @@ async def change_password(
     if len(payload.new_password) < 8:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be at least 8 characters long",
+            detail="Password must be at least 8 characters long",
         )
+
     user = await db.users.find_one({"_id": ObjectId(user_id)})
-    if not verify_password(payload.current_password[:72], user.get("password_hash", "")):
+    if not user or not verify_password(payload.old_password[:72], user.get("password_hash", "")):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Incorrect current password",
         )
 
     new_hash = hash_password(payload.new_password[:72])
-    await db.users.update_one(
-        {"_id": ObjectId(user_id)}, {"$set": {"password_hash": new_hash}}
-    )
+    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"password_hash": new_hash}})
 
     background_tasks.add_task(
         send_admin_alert_task,
         current_user.get("email", "User"),
-        "Account Password Changed via Settings",
+        "User Changed Password via Profile Settings",
     )
 
-    return {"message": "Password updated successfully"}
+    return {"message": "Password changed successfully"}
