@@ -32,7 +32,7 @@ MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "your_app_password")
 MAIL_FROM = os.getenv("MAIL_FROM", "your_system_email@gmail.com")
 ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "admin@medcore.com")
 
-# Updated Mail Configuration: Using Port 465 SSL for Render Compatibility
+# Mail Configuration: Using Port 465 SSL for Render Compatibility
 mail_config = ConnectionConfig(
     MAIL_USERNAME=MAIL_USERNAME,
     MAIL_PASSWORD=MAIL_PASSWORD,
@@ -59,7 +59,7 @@ def generate_otp(length: int = 6) -> str:
 
 
 async def send_otp_email_task(email_to: str, otp: str):
-    """Sends OTP email via Gmail SMTP background task."""
+    """Sends OTP email via Gmail SMTP with direct exception handling."""
     try:
         html_content = f"""
         <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f8fafc; color: #1e293b;">
@@ -77,8 +77,9 @@ async def send_otp_email_task(email_to: str, otp: str):
         )
         fm = FastMail(mail_config)
         await fm.send_message(message)
+        print(f"✅ OTP email successfully delivered to {email_to}", flush=True)
     except Exception as e:
-        print(f"Failed to send OTP email to {email_to}: {str(e)}")
+        print(f"❌ SMTP Delivery Failure for {email_to}: {str(e)}", flush=True)
 
 
 async def send_admin_alert_task(user_email: str, event_type: str):
@@ -101,7 +102,7 @@ async def send_admin_alert_task(user_email: str, event_type: str):
         fm = FastMail(mail_config)
         await fm.send_message(message)
     except Exception as e:
-        print(f"Failed to send admin notification email: {str(e)}")
+        print(f"Failed to send admin notification email: {str(e)}", flush=True)
 
 
 def check_rate_limit(email: str):
@@ -202,20 +203,24 @@ async def send_otp(request: Request, background_tasks: BackgroundTasks):
             "expires_at": datetime.utcnow() + timedelta(minutes=10),
         }
 
-        # Print OTP to server logs for immediate testing/debugging
-        print("\n==========================================")
-        print(f"🔑 RESET OTP CODE FOR [{email}]: {otp}")
+        # Print OTP to server logs for immediate visibility
+        print("\n==========================================", flush=True)
+        print(f"🔑 RESET OTP CODE FOR [{email}]: {otp}", flush=True)
         print("==========================================\n", flush=True)
 
-        background_tasks.add_task(send_otp_email_task, email, otp)
+        # Await directly so SMTP logs render instantly
+        await send_otp_email_task(email, otp)
+
         return {"message": f"Verification OTP sent successfully to {email}"}
     except HTTPException as he:
         raise he
     except Exception as e:
+        print(f"❌ OTP Generation Exception: {str(e)}", flush=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate OTP: {str(e)}",
         )
+
 # 2. REGISTER WITH OTP VERIFICATION
 @router.post("/register-with-otp", status_code=status.HTTP_201_CREATED)
 @router.post("/register-with-otp/", status_code=status.HTTP_201_CREATED)
