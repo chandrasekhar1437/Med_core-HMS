@@ -1,4 +1,5 @@
 import traceback
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from bson import ObjectId
@@ -19,6 +20,44 @@ from app.schemas.user import (
 
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/swagger-login")
+
+# In-Memory Security Tracker for Brute-Force Rate Limiting
+FAILED_LOGIN_ATTEMPTS: Dict[str, Dict[str, Any]] = {}
+MAX_FAILED_ATTEMPTS = 5
+LOCKOUT_DURATION_MINUTES = 15
+
+
+def check_rate_limit(email: str):
+    """Enforces brute-force protection and temporary lockout on failed logins."""
+    record = FAILED_LOGIN_ATTEMPTS.get(email)
+    if not record:
+        return
+
+    lockout_until = record.get("lockout_until")
+    if lockout_until and datetime.utcnow() < lockout_until:
+        remaining_seconds = int((lockout_until - datetime.utcnow()).total_seconds())
+        remaining_minutes = max(1, remaining_seconds // 60)
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many failed attempts. Account locked. Try again in {remaining_minutes} minute(s).",
+        )
+
+
+def record_failed_attempt(email: str):
+    """Tracks failed login attempts and sets lockout timestamp if threshold exceeded."""
+    now = datetime.utcnow()
+    record = FAILED_LOGIN_ATTEMPTS.get(email, {"count": 0, "lockout_until": None})
+
+    record["count"] += 1
+    if record["count"] >= MAX_FAILED_ATTEMPTS:
+        record["lockout_until"] = now + timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+
+    FAILED_LOGIN_ATTEMPTS[email] = record
+
+
+def reset_failed_attempts(email: str):
+    """Clears failed login attempt counter upon successful authentication."""
+    FAILED_LOGIN_ATTEMPTS.pop(email, None)
 
 
 def normalize_role(role: Optional[str]) -> str:
@@ -55,6 +94,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
     if not user:
         raise credentials_exception
 
+    if not user.get("is_active", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user account",
+        )
+
     user["id"] = str(user.pop("_id"))
     user.pop("password_hash", None)
     return user
@@ -66,7 +111,7 @@ async def register(request: Request):
     try:
         body = await request.json()
         email_raw = body.get("email") or body.get("username") or ""
-        password = body.get("password") or ""
+        password = str(body.get("password") or "")
         raw_name = body.get("full_name") or body.get("name") or "User"
         req_role = body.get("role") or "Patient"
 
@@ -78,6 +123,12 @@ async def register(request: Request):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email and password are required",
+            )
+
+        if len(password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must be at least 8 characters long",
             )
 
         existing = await db.users.find_one({"email": email})
@@ -92,7 +143,8 @@ async def register(request: Request):
             "name": user_name,
             "full_name": user_name,
             "role": user_role,
-            "password_hash": hash_password(str(password)[:72]),
+            "is_active": True,
+            "password_hash": hash_password(password[:72]),
         }
 
         result = await db.users.insert_one(user_doc)
@@ -142,12 +194,26 @@ async def login(request: Request):
                 detail="Email and password are required",
             )
 
+        # Rate Limit Check
+        check_rate_limit(email)
+
         user = await db.users.find_one({"email": email})
+
         if not user or not verify_password(password[:72], user.get("password_hash", "")):
+            record_failed_attempt(email)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password. Please check your credentials.",
             )
+
+        if not user.get("is_active", True):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your account has been disabled. Please contact system support.",
+            )
+
+        # Successful Login -> Reset Attempt Tracker
+        reset_failed_attempts(email)
 
         user_id = str(user["_id"])
         db_role = user.get("role") or "Patient"
@@ -193,12 +259,23 @@ async def swagger_login(form_data: OAuth2PasswordRequestForm = Depends()):
     email = str(form_data.username).lower().strip()
     password = str(form_data.password)
 
+    check_rate_limit(email)
+
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(password[:72], user.get("password_hash", "")):
+        record_failed_attempt(email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
+
+    if not user.get("is_active", True):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account has been disabled",
+        )
+
+    reset_failed_attempts(email)
 
     user_id = str(user["_id"])
     db_role = user.get("role", "Patient")
@@ -275,6 +352,12 @@ async def change_password(
     current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     user_id = current_user["id"]
+
+    if len(payload.new_password) < 8:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 8 characters long",
+        )
 
     user = await db.users.find_one({"_id": ObjectId(user_id)})
     if not verify_password(payload.current_password[:72], user.get("password_hash", "")):
