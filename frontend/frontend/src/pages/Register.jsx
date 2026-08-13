@@ -7,10 +7,12 @@ import {
   User,
   ShieldCheck,
   CheckCircle2,
-  UserCheck,
   UserPlus,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
+import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import API from "../services/api";
 import "./Register.css";
@@ -19,7 +21,7 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("Patient");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,35 +37,60 @@ export default function Register() {
     const cleanEmail = email.toLowerCase().trim();
     const cleanPassword = password.trim();
 
+    // Restricted strictly to Patient role for public self-registration
     const payload = {
       name: cleanName,
       full_name: cleanName,
       email: cleanEmail,
       password: cleanPassword,
-      role: role,
+      role: "Patient",
     };
 
     try {
       let response;
+
+      // Endpoint strategy: Try multiple route variants to prevent 404 Not Found errors
       try {
-        response = await API.post("/auth/register", payload);
-      } catch (firstErr) {
-        if (firstErr.response && firstErr.response.status === 404) {
-          response = await API.post("/api/v1/auth/register", payload);
+        response = await API.post("/api/v1/auth/register", payload);
+      } catch (err1) {
+        if (err1.response && err1.response.status === 404) {
+          try {
+            response = await API.post("/auth/register", payload);
+          } catch (err2) {
+            if (err2.response && err2.response.status === 404) {
+              const baseURL = API.defaults.baseURL || "https://medcore-hms.onrender.com";
+              const cleanBase = baseURL.replace(/\/api\/v1\/?$/, "").replace(/\/$/, "");
+              response = await axios.post(`${cleanBase}/api/v1/auth/register`, payload);
+            } else {
+              throw err2;
+            }
+          }
         } else {
-          throw firstErr;
+          throw err1;
         }
       }
 
       const { access_token, user } = response.data;
+      const userData = user || {
+        email: cleanEmail,
+        name: cleanName,
+        role: "Patient",
+      };
 
+      // Handle context login flexible parameters
       const handleAuthLogin = loginUser || login;
       if (typeof handleAuthLogin === "function") {
-        handleAuthLogin(access_token, user);
-      } else {
-        localStorage.setItem("token", access_token);
-        localStorage.setItem("user", JSON.stringify(user));
+        try {
+          handleAuthLogin(userData, access_token);
+        } catch {
+          handleAuthLogin(access_token, userData);
+        }
       }
+
+      // Local storage fallback persistence
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("user", JSON.stringify(userData));
 
       navigate("/");
     } catch (err) {
@@ -87,9 +114,9 @@ export default function Register() {
         {/* Left Side Form Panel */}
         <div className="register-form-panel">
           <div className="register-form-header">
-            <h1 className="register-form-title">Create Account</h1>
+            <h1 className="register-form-title">Patient Registration</h1>
             <p className="register-form-subtitle">
-              Register a new account to access hospital management tools
+              Register a patient account to book appointments and access health portal tools
             </p>
           </div>
 
@@ -109,7 +136,7 @@ export default function Register() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Dr. John Doe"
+                  placeholder="John Doe"
                   required
                   className="register-field-input"
                 />
@@ -124,7 +151,7 @@ export default function Register() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="user@medcore.com"
+                  placeholder="patient@example.com"
                   required
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -136,46 +163,50 @@ export default function Register() {
 
             <div className="register-input-group">
               <label className="register-input-label">Password</label>
-              <div className="register-input-wrapper">
+              <div className="register-input-wrapper" style={{ position: "relative" }}>
                 <Lock size={18} color="#94a3b8" className="register-input-icon" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Create a strong password"
+                  placeholder="At least 8 characters"
                   required
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
                   className="register-field-input"
                 />
-              </div>
-            </div>
-
-            <div className="register-input-group">
-              <label className="register-input-label">Account Role</label>
-              <div className="register-input-wrapper">
-                <UserCheck size={18} color="#94a3b8" className="register-input-icon" />
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="register-select-input"
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "12px",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    padding: 0,
+                  }}
+                  title={showPassword ? "Hide password" : "Show password"}
                 >
-                  <option value="Patient">Patient</option>
-                  <option value="Doctor">Doctor</option>
-                  <option value="Staff">Medical Staff / Nurse</option>
-                  <option value="Admin">Administrator</option>
-                </select>
+                  {showPassword ? (
+                    <EyeOff size={18} color="#94a3b8" />
+                  ) : (
+                    <Eye size={18} color="#94a3b8" />
+                  )}
+                </button>
               </div>
             </div>
 
             <button type="submit" disabled={loading} className="register-submit-btn">
               {loading ? (
-                "Creating Account..."
+                "Creating Patient Account..."
               ) : (
                 <>
                   <UserPlus size={18} />
-                  <span>Register Account</span>
+                  <span>Create Patient Account</span>
                 </>
               )}
             </button>
@@ -197,32 +228,32 @@ export default function Register() {
             </div>
             <div>
               <h2 className="register-brand-title">MedCore HMS</h2>
-              <p className="register-brand-subtitle">Healthcare Operations Suite</p>
+              <p className="register-brand-subtitle">Patient Health Portal</p>
             </div>
           </div>
 
           <div className="register-feature-list">
             <div className="register-feature-item">
               <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Streamlined Staff & Patient Onboarding</span>
+              <span>Self-Service Patient Registration</span>
             </div>
             <div className="register-feature-item">
               <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Role-Based Portal Access Control</span>
+              <span>Online Appointment Scheduling</span>
             </div>
             <div className="register-feature-item">
               <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Instant Appointment Booking & E-Prescriptions</span>
+              <span>Access Digital Prescriptions & Lab Results</span>
             </div>
             <div className="register-feature-item">
               <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Secure Patient Electronic Health Records</span>
+              <span>Secure Encrypted Health Records</span>
             </div>
           </div>
 
           <div className="register-security-footer">
             <ShieldCheck size={16} color="#94a3b8" />
-            <span>Encrypted HIPAA Compliant Platform</span>
+            <span>256-Bit Encrypted Patient Portal</span>
           </div>
         </div>
       </div>
