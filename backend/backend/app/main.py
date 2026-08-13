@@ -1,6 +1,8 @@
+import time
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.database import db
 from app.api.v1.endpoints import (
     appointments,
     auth,
@@ -16,13 +18,17 @@ from app.api.v1.endpoints import (
     ward_management,
 )
 
+START_TIME = time.time()
+
 app = FastAPI(
     title="Med-core HMS",
-    description="Backend API for Hospital Management System",
+    description="Backend API for MedCore Hospital Management System",
     version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Valid CORS configuration supporting credentials across all origins
+# CORS Configuration supporting credentials and wildcards across environments
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=".*",
@@ -32,7 +38,7 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
-# Include primary v1 routers
+# --- Primary API v1 Router Inclusion ---
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(patients.router, prefix="/api/v1/patients", tags=["patients"])
 app.include_router(doctors.router, prefix="/api/v1/doctors", tags=["doctors"])
@@ -46,14 +52,40 @@ app.include_router(ward_management.router, prefix="/api/v1/ward-management", tag
 app.include_router(settings.router, prefix="/api/v1/settings", tags=["settings"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 
+# --- Fallback Routes (Supports legacy/direct path variations) ---
+app.include_router(auth.router, prefix="/auth", tags=["auth_fallback"], include_in_schema=False)
+app.include_router(users.router, prefix="/users", tags=["users_fallback"], include_in_schema=False)
+
+
+@app.on_event("startup")
+async def startup_event():
+    print("🚀 Starting MedCore HMS Backend API Service...")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    print("🛑 Shutting down MedCore HMS Backend API Service...")
+
 
 @app.get("/")
 @app.head("/")
 def read_root():
-    return {"status": "ok", "message": "Welcome to Med-core HMS API"}
+    return {
+        "status": "ok",
+        "service": "Med-core HMS API",
+        "version": "1.0.0",
+        "docs": "/docs",
+    }
 
 
 @app.get("/health")
 @app.head("/health")
 def health_check():
-    return {"status": "healthy", "service": "Med-core HMS API"}
+    uptime_seconds = int(time.time() - START_TIME)
+    db_connected = db is not None
+    return {
+        "status": "healthy" if db_connected else "degraded",
+        "service": "Med-core HMS API",
+        "database_status": "connected" if db_connected else "disconnected",
+        "uptime_seconds": uptime_seconds,
+    }

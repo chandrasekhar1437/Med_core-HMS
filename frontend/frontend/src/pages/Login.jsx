@@ -11,6 +11,7 @@ import {
   UserCheck,
   Eye,
   EyeOff,
+  HelpCircle,
 } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
@@ -18,8 +19,8 @@ import API from "../services/api";
 import "./Login.css";
 
 export default function Login() {
-  const [email, setEmail] = useState("anil@gmail.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [role, setRole] = useState("Admin");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -27,6 +28,20 @@ export default function Login() {
 
   const { loginUser, login } = useAuth();
   const navigate = useNavigate();
+
+  // Helper for email input placeholder depending on role
+  const getEmailPlaceholder = () => {
+    switch (role) {
+      case "Doctor":
+        return "doctor@medcore.com";
+      case "Patient":
+        return "patient@example.com";
+      case "Staff":
+        return "nurse@medcore.com";
+      default:
+        return "admin@medcore.com";
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -149,7 +164,7 @@ export default function Login() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@medcore.com"
+                  placeholder={getEmailPlaceholder()}
                   required
                   autoComplete="email"
                   autoCapitalize="none"
@@ -162,7 +177,24 @@ export default function Login() {
 
             {/* Password with Eye Toggle */}
             <div className="login-input-group">
-              <label className="login-input-label">Password</label>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label className="login-input-label">Password</label>
+                <Link
+                  to="/forgot-password"
+                  style={{
+                    fontSize: "12px",
+                    color: "#38bdf8",
+                    textDecoration: "none",
+                    marginBottom: "6px",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "4px",
+                  }}
+                >
+                  <HelpCircle size={12} />
+                  <span>Forgot Password?</span>
+                </Link>
+              </div>
               <div className="login-input-wrapper" style={{ position: "relative" }}>
                 <Lock size={18} color="#94a3b8" className="login-input-icon" />
                 <input
@@ -216,7 +248,7 @@ export default function Login() {
           <div className="login-register-footer">
             <span>Don't have an account? </span>
             <Link to="/register" className="login-register-link">
-              Create staff account
+              Create an account
             </Link>
           </div>
         </div>

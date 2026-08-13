@@ -27,3 +27,9 @@ class Settings(BaseSettings):
     DB_NAME: str = os.getenv("DB_NAME", os.getenv("DATABASE_NAME", "med_core_hms"))
 
 settings = Settings()
+
+MAIL_USERNAME=your_system_email@gmail.com
+MAIL_PASSWORD=your_app_password
+MAIL_FROM=your_system_email@gmail.com
+MAIL_PORT=587
+MAIL_SERVER=smtp.gmail.com

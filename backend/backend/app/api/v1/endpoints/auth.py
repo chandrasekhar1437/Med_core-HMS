@@ -1,10 +1,14 @@
+import os
+import random
+import string
 import traceback
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi_mail import ConnectionConfig, FastMail, MessageSchema, MessageType
 
 from app.core.database import db
 from app.core.security import (
@@ -21,10 +25,80 @@ from app.schemas.user import (
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/swagger-login")
 
-# In-Memory Security Tracker for Brute-Force Rate Limiting
+# Environment & Mail Setup
+MAIL_USERNAME = os.getenv("MAIL_USERNAME", "your_system_email@gmail.com")
+MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "your_app_password")
+MAIL_FROM = os.getenv("MAIL_FROM", "your_system_email@gmail.com")
+ADMIN_NOTIFICATION_EMAIL = os.getenv("ADMIN_NOTIFICATION_EMAIL", "admin@medcore.com")
+
+mail_config = ConnectionConfig(
+    MAIL_USERNAME=MAIL_USERNAME,
+    MAIL_PASSWORD=MAIL_PASSWORD,
+    MAIL_FROM=MAIL_FROM,
+    MAIL_PORT=587,
+    MAIL_SERVER="smtp.gmail.com",
+    MAIL_STARTTLS=True,
+    MAIL_SSL_TLS=False,
+    USE_CREDENTIALS=True,
+)
+
+# Temporary In-Memory OTP Store & Security Trackers
+OTP_STORE: Dict[str, Dict[str, Any]] = {}
 FAILED_LOGIN_ATTEMPTS: Dict[str, Dict[str, Any]] = {}
 MAX_FAILED_ATTEMPTS = 5
 LOCKOUT_DURATION_MINUTES = 15
+
+
+# Helper Functions
+def generate_otp(length: int = 6) -> str:
+    """Generates a numeric 6-digit OTP code."""
+    return "".join(random.choices(string.digits, k=length))
+
+
+async def send_otp_email_task(email_to: str, otp: str):
+    """Sends OTP email via Gmail SMTP background task."""
+    try:
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f8fafc; color: #1e293b;">
+            <h2 style="color: #0284c7;">MedCore HMS Verification</h2>
+            <p>Your one-time email verification code is:</p>
+            <h1 style="font-size: 32px; letter-spacing: 4px; color: #0284c7;">{otp}</h1>
+            <p>This code is valid for 10 minutes. Do not share this code with anyone.</p>
+        </div>
+        """
+        message = MessageSchema(
+            subject="MedCore HMS - Email Verification OTP",
+            recipients=[email_to],
+            body=html_content,
+            subtype=MessageType.html,
+        )
+        fm = FastMail(mail_config)
+        await fm.send_message(message)
+    except Exception as e:
+        print(f"Failed to send OTP email to {email_to}: {str(e)}")
+
+
+async def send_admin_alert_task(user_email: str, event_type: str):
+    """Sends account change notification alerts to the System Administrator."""
+    try:
+        html_content = f"""
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #0f172a; color: #f8fafc;">
+            <h3 style="color: #38bdf8;">⚙️ MedCore HMS - Security Alert</h3>
+            <p><strong>Action Event:</strong> {event_type}</p>
+            <p><strong>Target User:</strong> {user_email}</p>
+            <p><strong>Timestamp:</strong> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}</p>
+        </div>
+        """
+        message = MessageSchema(
+            subject=f"MedCore HMS Security Notification: {event_type}",
+            recipients=[ADMIN_NOTIFICATION_EMAIL],
+            body=html_content,
+            subtype=MessageType.html,
+        )
+        fm = FastMail(mail_config)
+        await fm.send_message(message)
+    except Exception as e:
+        print(f"Failed to send admin notification email: {str(e)}")
 
 
 def check_rate_limit(email: str):
@@ -105,9 +179,168 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> Dict[str, Any
     return user
 
 
-# 1. REGISTER
+# 1. SEND GMAIL OTP CODE
+@router.post("/send-otp")
+async def send_otp(request: Request, background_tasks: BackgroundTasks):
+    try:
+        body = await request.json()
+        email = str(body.get("email") or "").lower().strip()
+
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email address is required",
+            )
+
+        otp = generate_otp()
+        OTP_STORE[email] = {
+            "otp": otp,
+            "expires_at": datetime.utcnow() + timedelta(minutes=10),
+        }
+
+        background_tasks.add_task(send_otp_email_task, email, otp)
+        return {"message": f"Verification OTP sent successfully to {email}"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate OTP: {str(e)}",
+        )
+
+
+# 2. REGISTER WITH OTP VERIFICATION
+@router.post("/register-with-otp", status_code=status.HTTP_201_CREATED)
+async def register_with_otp(request: Request, background_tasks: BackgroundTasks):
+    try:
+        body = await request.json()
+        email = str(body.get("email") or "").lower().strip()
+        otp_provided = str(body.get("otp") or "").strip()
+        password = str(body.get("password") or "")
+        raw_name = body.get("full_name") or body.get("name") or "User"
+
+        clean_name = str(raw_name).strip()
+
+        if not email or not otp_provided or not password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email, password, and OTP code are required",
+            )
+
+        record = OTP_STORE.get(email)
+        if not record or record["otp"] != otp_provided or datetime.utcnow() > record["expires_at"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired OTP code",
+            )
+
+        # Clear verified OTP
+        OTP_STORE.pop(email, None)
+
+        existing = await db.users.find_one({"email": email})
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="User with this email already exists",
+            )
+
+        user_doc = {
+            "email": email,
+            "name": clean_name,
+            "full_name": clean_name,
+            "role": "Patient",
+            "is_active": True,
+            "password_hash": hash_password(password[:72]),
+        }
+
+        result = await db.users.insert_one(user_doc)
+        user_id = str(result.inserted_id)
+
+        access_token = create_access_token(
+            data={"sub": user_id, "email": email, "role": "Patient"}
+        )
+
+        background_tasks.add_task(
+            send_admin_alert_task, email, "New Patient Registration via Gmail OTP"
+        )
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user_id,
+                "email": email,
+                "name": clean_name,
+                "full_name": clean_name,
+                "role": "Patient",
+            },
+        }
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registration with OTP failed: {str(e)}",
+        )
+
+
+# 3. FORGOT PASSWORD RESET VIA OTP
+@router.post("/reset-password-otp")
+async def reset_password_otp(request: Request, background_tasks: BackgroundTasks):
+    try:
+        body = await request.json()
+        email = str(body.get("email") or "").lower().strip()
+        otp_provided = str(body.get("otp") or "").strip()
+        new_password = str(body.get("new_password") or "")
+
+        if not email or not otp_provided or not new_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email, OTP code, and new password are required",
+            )
+
+        if len(new_password) < 8:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must be at least 8 characters long",
+            )
+
+        record = OTP_STORE.get(email)
+        if not record or record["otp"] != otp_provided or datetime.utcnow() > record["expires_at"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid or expired OTP code",
+            )
+
+        OTP_STORE.pop(email, None)
+
+        user = await db.users.find_one({"email": email})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User account not found",
+            )
+
+        new_hash = hash_password(new_password[:72])
+        await db.users.update_one({"email": email}, {"$set": {"password_hash": new_hash}})
+
+        background_tasks.add_task(
+            send_admin_alert_task, email, "Password Reset via Gmail OTP"
+        )
+
+        return {"message": "Password reset successfully. You can now login."}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Password reset failed: {str(e)}",
+        )
+
+
+# 4. STANDARD REGISTER
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(request: Request):
+async def register(request: Request, background_tasks: BackgroundTasks):
     try:
         body = await request.json()
         email_raw = body.get("email") or body.get("username") or ""
@@ -154,6 +387,10 @@ async def register(request: Request):
             data={"sub": user_id, "email": email, "role": user_role}
         )
 
+        background_tasks.add_task(
+            send_admin_alert_task, email, f"New Account Created ({user_role})"
+        )
+
         return {
             "access_token": access_token,
             "token_type": "bearer",
@@ -177,7 +414,7 @@ async def register(request: Request):
         )
 
 
-# 2. FRONTEND JSON LOGIN
+# 5. FRONTEND JSON LOGIN
 @router.post("/login")
 async def login(request: Request):
     try:
@@ -194,7 +431,6 @@ async def login(request: Request):
                 detail="Email and password are required",
             )
 
-        # Rate Limit Check
         check_rate_limit(email)
 
         user = await db.users.find_one({"email": email})
@@ -212,7 +448,6 @@ async def login(request: Request):
                 detail="Your account has been disabled. Please contact system support.",
             )
 
-        # Successful Login -> Reset Attempt Tracker
         reset_failed_attempts(email)
 
         user_id = str(user["_id"])
@@ -253,7 +488,7 @@ async def login(request: Request):
         )
 
 
-# 3. SWAGGER FORM LOGIN
+# 6. SWAGGER FORM LOGIN
 @router.post("/swagger-login", include_in_schema=False)
 async def swagger_login(form_data: OAuth2PasswordRequestForm = Depends()):
     email = str(form_data.username).lower().strip()
@@ -299,16 +534,17 @@ async def swagger_login(form_data: OAuth2PasswordRequestForm = Depends()):
     }
 
 
-# 4. PROFILE ROUTE
+# 7. PROFILE ROUTE
 @router.get("/me")
 async def get_me(current_user: Dict[str, Any] = Depends(get_current_user)):
     return current_user
 
 
-# 5. UPDATE PROFILE
+# 8. UPDATE PROFILE (WITH ADMIN NOTIFICATION)
 @router.patch("/me")
 async def update_user_profile(
     payload: UserUpdate,
+    background_tasks: BackgroundTasks,
     current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     user_id = current_user["id"]
@@ -339,16 +575,23 @@ async def update_user_profile(
 
     await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": updates})
 
+    background_tasks.add_task(
+        send_admin_alert_task,
+        current_user.get("email", "User"),
+        "User Profile Details Updated",
+    )
+
     updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
     updated_user["id"] = str(updated_user.pop("_id"))
     updated_user.pop("password_hash", None)
     return updated_user
 
 
-# 6. CHANGE PASSWORD
+# 9. CHANGE PASSWORD
 @router.post("/change-password")
 async def change_password(
     payload: PasswordChange,
+    background_tasks: BackgroundTasks,
     current_user: Dict[str, Any] = Depends(get_current_user),
 ):
     user_id = current_user["id"]
@@ -358,7 +601,6 @@ async def change_password(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="New password must be at least 8 characters long",
         )
-
     user = await db.users.find_one({"_id": ObjectId(user_id)})
     if not verify_password(payload.current_password[:72], user.get("password_hash", "")):
         raise HTTPException(
@@ -369,6 +611,12 @@ async def change_password(
     new_hash = hash_password(payload.new_password[:72])
     await db.users.update_one(
         {"_id": ObjectId(user_id)}, {"$set": {"password_hash": new_hash}}
+    )
+
+    background_tasks.add_task(
+        send_admin_alert_task,
+        current_user.get("email", "User"),
+        "Account Password Changed via Settings",
     )
 
     return {"message": "Password updated successfully"}

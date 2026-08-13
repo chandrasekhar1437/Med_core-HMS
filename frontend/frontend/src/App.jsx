@@ -1,8 +1,13 @@
 ﻿import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
+
+// Auth Pages
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+
+// Main Application Pages
 import Dashboard from "./pages/Dashboard";
 import Patients from "./pages/Patients";
 import Doctors from "./pages/Doctors";
@@ -14,6 +19,13 @@ import Pharmacy from "./pages/Pharmacy";
 import Laboratory from "./pages/Laboratory";
 import WardManagement from "./pages/WardManagement";
 import Settings from "./pages/Settings";
+
+// Role-Based Dedicated Portals
+import AdminDashboard from "./pages/portals/AdminDahboard";
+import DoctorDashboard from "./pages/portals/DoctorDashboard";
+import NurseDashboard from "./pages/portals/NurseDashboard";
+import PatientDashboard from "./pages/portals/PatientDashboard";
+
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 function ProtectedRoute() {
@@ -77,6 +89,7 @@ export default function App() {
           <Route element={<PublicOnlyRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
           </Route>
 
           {/* Protected Application Routes */}
@@ -93,6 +106,12 @@ export default function App() {
               <Route path="/laboratory" element={<Laboratory />} />
               <Route path="/ward-management" element={<WardManagement />} />
               <Route path="/settings" element={<Settings />} />
+
+              {/* Dedicated Role Portals */}
+              <Route path="/portals/admin" element={<AdminDashboard />} />
+              <Route path="/portals/doctor" element={<DoctorDashboard />} />
+              <Route path="/portals/nurse" element={<NurseDashboard />} />
+              <Route path="/portals/patient" element={<PatientDashboard />} />
             </Route>
           </Route>
 

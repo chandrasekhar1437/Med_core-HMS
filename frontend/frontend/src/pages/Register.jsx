@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  UserCheck,
 } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
@@ -21,6 +22,7 @@ export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("Patient");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,13 +39,12 @@ export default function Register() {
     const cleanEmail = email.toLowerCase().trim();
     const cleanPassword = password.trim();
 
-    // Restricted strictly to Patient role for public self-registration
     const payload = {
       name: cleanName,
       full_name: cleanName,
       email: cleanEmail,
       password: cleanPassword,
-      role: "Patient",
+      role: role,
     };
 
     try {
@@ -74,7 +75,7 @@ export default function Register() {
       const userData = user || {
         email: cleanEmail,
         name: cleanName,
-        role: "Patient",
+        role: role,
       };
 
       // Handle context login flexible parameters
@@ -114,9 +115,9 @@ export default function Register() {
         {/* Left Side Form Panel */}
         <div className="register-form-panel">
           <div className="register-form-header">
-            <h1 className="register-form-title">Patient Registration</h1>
+            <h1 className="register-form-title">Create Account</h1>
             <p className="register-form-subtitle">
-              Register a patient account to book appointments and access health portal tools
+              Register an account to access MedCore HMS tools
             </p>
           </div>
 
@@ -128,6 +129,24 @@ export default function Register() {
           )}
 
           <form onSubmit={handleSubmit} autoCapitalize="none" autoCorrect="off">
+            {/* Account Role Dropdown */}
+            <div className="register-input-group">
+              <label className="register-input-label">Account Type / Role</label>
+              <div className="register-input-wrapper">
+                <UserCheck size={18} color="#94a3b8" className="register-input-icon" />
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="register-field-input"
+                  style={{ cursor: "pointer", backgroundColor: "transparent" }}
+                >
+                  <option value="Patient" style={{ color: "#000" }}>Patient</option>
+                  <option value="Admin" style={{ color: "#000" }}>Administrator</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Full Name */}
             <div className="register-input-group">
               <label className="register-input-label">Full Name</label>
               <div className="register-input-wrapper">
@@ -136,13 +155,14 @@ export default function Register() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder={role === "Admin" ? "System Admin Name" : "John Doe"}
                   required
                   className="register-field-input"
                 />
               </div>
             </div>
 
+            {/* Email Address */}
             <div className="register-input-group">
               <label className="register-input-label">Email Address</label>
               <div className="register-input-wrapper">
@@ -151,7 +171,7 @@ export default function Register() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="patient@example.com"
+                  placeholder={role === "Admin" ? "admin@medcore.com" : "patient@example.com"}
                   required
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -161,6 +181,7 @@ export default function Register() {
               </div>
             </div>
 
+            {/* Password */}
             <div className="register-input-group">
               <label className="register-input-label">Password</label>
               <div className="register-input-wrapper" style={{ position: "relative" }}>
@@ -202,11 +223,11 @@ export default function Register() {
 
             <button type="submit" disabled={loading} className="register-submit-btn">
               {loading ? (
-                "Creating Patient Account..."
+                "Creating Account..."
               ) : (
                 <>
                   <UserPlus size={18} />
-                  <span>Create Patient Account</span>
+                  <span>Create {role} Account</span>
                 </>
               )}
             </button>
@@ -228,32 +249,32 @@ export default function Register() {
             </div>
             <div>
               <h2 className="register-brand-title">MedCore HMS</h2>
-              <p className="register-brand-subtitle">Patient Health Portal</p>
+              <p className="register-brand-subtitle">Healthcare Operations Suite</p>
             </div>
           </div>
 
           <div className="register-feature-list">
             <div className="register-feature-item">
               <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Self-Service Patient Registration</span>
+              <span>Multi-Role Access (Patient & Admin Registration)</span>
             </div>
             <div className="register-feature-item">
               <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Online Appointment Scheduling</span>
+              <span>Online Appointment & Doctor Scheduling</span>
             </div>
             <div className="register-feature-item">
               <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Access Digital Prescriptions & Lab Results</span>
+              <span>Digital Health Records & Prescriptions</span>
             </div>
             <div className="register-feature-item">
               <CheckCircle2 size={18} color="#38bdf8" />
-              <span>Secure Encrypted Health Records</span>
+              <span>Role-Based Permissions & System Controls</span>
             </div>
           </div>
 
           <div className="register-security-footer">
             <ShieldCheck size={16} color="#94a3b8" />
-            <span>256-Bit Encrypted Patient Portal</span>
+            <span>256-Bit Encrypted Healthcare Platform</span>
           </div>
         </div>
       </div>
