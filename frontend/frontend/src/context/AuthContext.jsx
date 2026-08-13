@@ -26,8 +26,8 @@ export function AuthProvider({ children }) {
       }
 
       try {
-        // Aligned route with backend prefix /api/v1/auth/me
-        const res = await API.get("/api/v1/auth/me");
+        // FIXED: Route set to /auth/me so it appends cleanly to /api/v1
+        const res = await API.get("/auth/me");
         setUser(res.data);
         localStorage.setItem("user", JSON.stringify(res.data));
       } catch (err) {
